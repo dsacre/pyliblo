@@ -13,11 +13,16 @@ setup(
     description = 'Python wrapper for the liblo OSC library',
     license = "GPL",
     ext_modules = [
-        Extension('liblo', ['liblo/liblo.pyx'], libraries = ['lo']),
+        Extension(
+            'liblo',
+            ['liblo/liblo.pyx'],
+            libraries = ['lo']),
     ],
-    cmdclass = { 'build_ext': build_ext },
+    cmdclass = {
+        'build_ext': build_ext,
+    },
     scripts = [
         'scripts/send_osc',
-        'scripts/dump_osc'
+        'scripts/dump_osc',
     ]
 )
