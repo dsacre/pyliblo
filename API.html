@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+
+<head>
+  <title>pyliblo - API Documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <style type="text/css">
+    body { max-width: 60em; }
+    h1 { font-size: 130%; color: #333; background: #eee; padding: 4px 0.5em; }
+    h2 { font-size: 120%; color: #fff; background: #667; padding: 4px 1em; margin-top: 1.5em; }
+    h3 { font-size: 110%; color: #333; padding-left: 0.5em; margin-bottom: 0.4em; }
+    p,table { margin-left: 0.8em; margin-top: 0.4em; }
+    b { color: #333; }
+    th { color: #333; text-align: left; background: #eee; }
+  </style>
+</head>
+
+<body>
+
+<h1>pyliblo - API Documentation</h1>
+
+<h3>import liblo</h3>
+
+<h2>Server</h2>
+
+<h3>Server([port])</h3>
+<p>
+Constructs a new Server object, which can receive OSC messages.<br>
+port may be a decimal port number or a UNIX socket path.
+If omitted, a free UDP port will be used.<br>
+Exceptions: <b>ServerError</b>
+</p>
+
+<h3>get_url()</h3>
+<p>
+Returns the server's URL.
+</p>
+
+<h3>get_port()</h3>
+<p>
+Returns the server's port number.
+</p>
+
+<h3>add_method(path, typespec, callback_func[, user_data])</h3>
+<p>
+Registers a callback function for OSC messages with matching path and argument types.<br>
+For both path and typespec, None may be used as a wildcard.<br>
+The optional user_data will be passed on to the callback function.
+callback_func may be a global function or a class method, pyliblo will know what to do either way.
+</p>
+
+<h3>my_callback(path, args[, src[, user_data]])<br>
+my_callback(self, path, args[, src[, user_data]])</h3>
+<p>
+User-defined callback function, to be registered using add_method();
+called when a matching OSC message is received.<br>
+args will be a list of tuples, with each tuple containing the argument's typespec and data.
+src will be an Address object, containing the address the message came from.
+src and user_data may be omitted if not needed.
+</p>
+
+<h3>recv([timeout])</h3>
+<p>
+Receives and dispatches an OSC message.
+Blocking by default, unless timeout (in ms) is specified.<br>
+timeout may be 0, in which case recv() returns immediately.
+Returns True if a message was received, False otherwise.
+</p>
+
+<h3>send(target, message)<br>
+send(target, path[, arg, ...])</h3>
+<p>
+Sends a message from this server to the the given target.<br>
+target may be an Address object, a port number, a (hostname,port) tuple, or a URL.
+See <b>Message</b> for possible argument types.<br>
+Exceptions: <b>AddressError</b>
+</p>
+
+<h2>Address</h2>
+
+<h3>Address(hostname, port)<br>
+Address(port)<br>
+Address(url)</h3>
+<p>
+Constructs a new Address object from the given hostname/port or URL.<br>
+Exceptions: <b>AddressError</b>
+</p>
+
+<h3>get_url()</h3>
+<p>
+Returns the address's URL.
+</p>
+
+<h3>get_hostname()</h3>
+<p>
+Returns the address's hostname.
+</p>
+
+<h3>get_port()</h3>
+<p>
+Returns the address's port number.
+</p>
+
+<h2>Message</h2>
+
+<h3>Message(path[, arg, ...])</h3>
+<p>
+Constructs a new Message object.
+</p>
+
+<h3>add(arg[, ...])</h3>
+<p>
+Appends the given argument(s) to the message.
+</p>
+
+<h3>Argument types:</h3>
+<p>
+Each argument may be an int, float, string, or a (typespec,data) tuple to allow for greater control over the type to be transmitted.
+</p>
+<table border="1">
+  <tr><th>data type</th><th>typespec</th><th>argument</th></tr>
+  <tr><td>int32</td><td>'i'</td><td>int</td></tr>
+  <tr><td>int64</td><td>'h'</td><td>int, long</td></tr>
+  <tr><td>float</td><td>'f'</td><td>float</td></tr>
+  <tr><td>double</td><td>'d'</td><td>float</td></tr>
+  <tr><td>char</td><td>'c'</td><td>single-character string</td></tr>
+  <tr><td>string</td><td>'s'</td><td>string</td></tr>
+  <tr><td>blob</td><td>'b'</td><td>list, tuple, array.array('B')</td></tr>
+</table>
+
+<h2>Functions</h2>
+
+<h3>send(target, message)<br>
+send(target, path[, arg, ...])</h3>
+<p>
+
+Sends a message to the the given target, without requiring a server.<br>
+target may be an Address object, a port number, a (hostname,port) tuple, or a URL.
+See <b>Message</b> for possible argument types.<br>
+Exceptions: <b>AddressError</b>
+</p>
+
+</body>
+
+</html>
