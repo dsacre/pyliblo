@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+
+<head>
+  <title>pyliblo - Examples</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <style type="text/css">
+    body { max-width: 60em; }
+    h1 { font-size: 130%; color: #333; background: #eee; padding: 4px 0.5em; }
+    h2 { font-size: 120%; color: #fff; background: #667; padding: 4px 1em; margin-top: 1.5em; }
+    h3 { font-size: 110%; color: #333; padding-left: 0.5em; margin-bottom: 0.4em; }
+    p,table { margin-left: 0.8em; margin-top: 0.4em; }
+    b { color: #333; }
+    th { color: #333; text-align: left; background: #eee; }
+  </style>
+</head>
+
+<body>
+
+<h1>pyliblo - Examples</h1>
+
+<h2>Client</h2>
+
+<pre>
+#!/usr/bin/env python
+
+import liblo
+import sys
+
+# send all messages to port 1234 on the local machine
+try:
+    target = liblo.Address()
+except liblo.AddressError, err:
+    sys.exit(str(err))
+
+# send message "/foo/bar" with int, float and string arguments
+liblo.send(target, "/foo/bar", 123, 456.789, "test")
+
+# send double, int64 and char
+liblo.send(target, "/foo/a/b/c", ('d', 3.1415), ('h', 2**42), ('c', 'x'))
+
+# we can also build a message object first...
+msg = liblo.Message("/foo/blah")
+# ... append arguments later...
+msg.add(123, "foo")
+# ... and then send it
+liblo.send(target, msg)
+
+# send a list of bytes as a blob
+blob = [4, 8, 15, 16, 23, 42]
+liblo.send(target, "/foo/x/y", ('b', blob))
+</pre>
+
+<h2>Server</h2>
+
+<pre>
+#!/usr/bin/env python
+
+import liblo
+import sys
+
+# create server, listening on port 1234
+try:
+    server = liblo.Server(1234)
+except liblo.ServerError, err:
+    sys.exit(str(err))
+    
+def foo_bar_callback(path, args):
+    # print first argument
+    print arg[0][1]
+    # print second argument
+    print arg[1][1]
+
+
+def fallback(path, args, src):
+    print "got unknown message from " + src.get_url()
+
+
+# register method taking an int and a float
+server.add_method("/foo/bar", 'if', foo_bar_callback)
+
+
+server.add_method(None, None, fallback)
+</pre>
+
+</body>
+
+</html>
