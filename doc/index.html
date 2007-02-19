@@ -1,0 +1,614 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pyliblo 0.10 API Documentation &mdash; pyliblo  documentation</title>
+    
+    <link rel="stylesheet" href="_static/nasophon.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pyliblo  documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">pyliblo  documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-liblo"></span><div class="section" id="pyliblo-0-10-api-documentation">
+<h1>pyliblo 0.10 API Documentation<a class="headerlink" href="#pyliblo-0-10-api-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Homepage: <a class="reference external" href="http://das.nasophon.de/pyliblo/">http://das.nasophon.de/pyliblo/</a></p>
+<p>The latest version of this manual can be found at
+<a class="reference external" href="http://dsacre.github.io/pyliblo/doc/">http://dsacre.github.io/pyliblo/doc/</a>.</p>
+<p>For the most part, pyliblo is just a thin wrapper around
+<a class="reference external" href="http://liblo.sourceforge.net/">liblo</a>, which does
+all the real work.
+For questions not answered here, also see the
+<a class="reference external" href="http://liblo.sourceforge.net/docs/modules.html">liblo documentation</a>
+and the <a class="reference external" href="http://opensoundcontrol.org/spec-1_0">OSC spec</a>.</p>
+<div class="section" id="module-level-functions">
+<h2>Module-level Functions<a class="headerlink" href="#module-level-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="liblo.send">
+<tt class="descname">send</tt><big>(</big><em>target</em>, <em>*messages</em><big>)</big><a class="headerlink" href="#liblo.send" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">send</tt><big>(</big><em>target</em>, <em>path</em>, <em>*args</em><big>)</big></dt>
+<dd><p>Send messages to the the given target, without requiring a server.
+Arguments may be one or more <a class="reference internal" href="#liblo.Message" title="liblo.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a> or <a class="reference internal" href="#liblo.Bundle" title="liblo.Bundle"><tt class="xref py py-class docutils literal"><span class="pre">Bundle</span></tt></a> objects,
+or a single message given by its path and optional arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>target</strong> &#8211; the address to send the message to; an <a class="reference internal" href="#liblo.Address" title="liblo.Address"><tt class="xref py py-class docutils literal"><span class="pre">Address</span></tt></a> object,
+a port number, a <tt class="docutils literal"><span class="pre">(hostname,</span> <span class="pre">port)</span></tt> tuple, or a URL.</li>
+<li><strong>messages</strong> &#8211; one or more objects of type <a class="reference internal" href="#liblo.Message" title="liblo.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a> or <a class="reference internal" href="#liblo.Bundle" title="liblo.Bundle"><tt class="xref py py-class docutils literal"><span class="pre">Bundle</span></tt></a>.</li>
+<li><strong>path</strong> &#8211; the path of the message to be sent.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>AddressError</strong> &#8211; if the given target is invalid.</li>
+<li><strong>IOError</strong> &#8211; if the message couldn&#8217;t be sent.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="liblo.time">
+<tt class="descname">time</tt><big>(</big><big>)</big><a class="headerlink" href="#liblo.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the current time as a floating point number (seconds since
+January 1, 1900).</p>
+</dd></dl>
+
+</div>
+<div class="section" id="osc-server-classes">
+<h2>OSC Server Classes<a class="headerlink" href="#osc-server-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="liblo.Server">
+<em class="property">class </em><tt class="descname">Server</tt><a class="headerlink" href="#liblo.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>A server that can receive OSC messages using a simple single-threaded
+polling model.
+Use <a class="reference internal" href="#liblo.ServerThread" title="liblo.ServerThread"><tt class="xref py py-class docutils literal"><span class="pre">ServerThread</span></tt></a> for an OSC server that runs in its own thread
+and never blocks.</p>
+<dl class="method">
+<dt id="liblo.Server.Server">
+<tt class="descname">Server</tt><big>(</big><em>port</em><span class="optional">[</span>, <em>proto</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#liblo.Server.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <tt class="xref py py-class docutils literal"><span class="pre">Server</span></tt> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>port</strong> &#8211; a decimal port number or a UNIX socket path.  If omitted, an
+arbitrary free UDP port will be used.</li>
+<li><strong>proto</strong> &#8211; one of the constants <tt class="xref py py-const docutils literal"><span class="pre">UDP</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">TCP</span></tt>, or <tt class="xref py py-const docutils literal"><span class="pre">UNIX</span></tt>;
+default is <tt class="xref py py-const docutils literal"><span class="pre">UDP</span></tt>.</li>
+<li><strong>reg_methods</strong> &#8211; <tt class="docutils literal"><span class="pre">False</span></tt> if you don&#8217;t want the init function to automatically
+register callbacks defined with the <a class="reference internal" href="#liblo.make_method" title="liblo.make_method"><tt class="xref py py-func docutils literal"><span class="pre">make_method()</span></tt></a> decorator
+(keyword argument only).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Exceptions: ServerError</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Server.recv">
+<tt class="descname">recv</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#liblo.Server.recv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive and dispatch one OSC message.  Blocking by default, unless
+<em>timeout</em> is specified.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timeout</strong> &#8211; Time in milliseconds after which the function returns if no
+messages have been received.
+<em>timeout</em> may be 0, in which case the function always returns
+immediately, whether messages have been received or not.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="docutils literal"><span class="pre">True</span></tt> if a message was received, otherwise <tt class="docutils literal"><span class="pre">False</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Server.send">
+<tt class="descname">send</tt><big>(</big><em>target</em>, <em>*messages</em><big>)</big><a class="headerlink" href="#liblo.Server.send" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">send</tt><big>(</big><em>target</em>, <em>path</em>, <em>*args</em><big>)</big></dt>
+<dd><p>Send a message or bundle from this server to the the given target.
+Arguments may be one or more <a class="reference internal" href="#liblo.Message" title="liblo.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a> or <a class="reference internal" href="#liblo.Bundle" title="liblo.Bundle"><tt class="xref py py-class docutils literal"><span class="pre">Bundle</span></tt></a>
+objects, or a single message given by its path and optional arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>target</strong> &#8211; the address to send the message to; an <a class="reference internal" href="#liblo.Address" title="liblo.Address"><tt class="xref py py-class docutils literal"><span class="pre">Address</span></tt></a> object,
+a port number, a <tt class="docutils literal"><span class="pre">(hostname,</span> <span class="pre">port)</span></tt> tuple, or a URL.</li>
+<li><strong>messages</strong> &#8211; one or more objects of type <a class="reference internal" href="#liblo.Message" title="liblo.Message"><tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt></a> or <a class="reference internal" href="#liblo.Bundle" title="liblo.Bundle"><tt class="xref py py-class docutils literal"><span class="pre">Bundle</span></tt></a>.</li>
+<li><strong>path</strong> &#8211; the path of the message to be sent.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>AddressError</strong> &#8211; if the given target is invalid.</li>
+<li><strong>IOError</strong> &#8211; if the message couldn&#8217;t be sent.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Server.add_method">
+<tt class="descname">add_method</tt><big>(</big><em>path</em>, <em>typespec</em>, <em>func</em>, <em>user_data=None</em><big>)</big><a class="headerlink" href="#liblo.Server.add_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a callback function for OSC messages with matching path and
+argument types.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> &#8211; the message path to be handled by the registered method.
+<tt class="docutils literal"><span class="pre">None</span></tt> may be used as a wildcard to match any OSC message.</li>
+<li><strong>typespec</strong> &#8211; the argument types to be handled by the registered method.
+<tt class="docutils literal"><span class="pre">None</span></tt> may be used as a wildcard to match any OSC message.</li>
+<li><strong>func</strong> &#8211; the callback function.  This may be a global function, a class
+method, or any other callable object, pyliblo will know what
+to do either way.</li>
+<li><strong>user_data</strong> &#8211; An arbitrary object that will be passed on to <em>func</em> every time
+a matching message is received.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Server.del_method">
+<tt class="descname">del_method</tt><big>(</big><em>path</em>, <em>typespec</em><big>)</big><a class="headerlink" href="#liblo.Server.del_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a callback function.  For both <em>path</em> and <em>typespec</em>, <tt class="docutils literal"><span class="pre">None</span></tt>
+may be used as a wildcard.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.9.2.</span></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Server.register_methods">
+<tt class="descname">register_methods</tt><big>(</big><em>obj=None</em><big>)</big><a class="headerlink" href="#liblo.Server.register_methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call <a class="reference internal" href="#liblo.Server.add_method" title="liblo.Server.add_method"><tt class="xref py py-meth docutils literal"><span class="pre">add_method()</span></tt></a> for all methods of an object that are
+decorated with <a class="reference internal" href="#liblo.make_method" title="liblo.make_method"><tt class="xref py py-func docutils literal"><span class="pre">make_method()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>obj</strong> &#8211; The object that implements the OSC callbacks to be registered.
+By default this is the server object itself.</td>
+</tr>
+</tbody>
+</table>
+<p>This function is usually called automatically by the server&#8217;s
+constructor, unless its <em>reg_methods</em> parameter was set to <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="liblo.Server.url">
+<tt class="descname">url</tt><a class="headerlink" href="#liblo.Server.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>The server&#8217;s URL.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="liblo.Server.port">
+<tt class="descname">port</tt><a class="headerlink" href="#liblo.Server.port" title="Permalink to this definition">¶</a></dt>
+<dd><p>The server&#8217;s port number.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="liblo.Server.protocol">
+<tt class="descname">protocol</tt><a class="headerlink" href="#liblo.Server.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>The server&#8217;s protocol (one of the constants <tt class="xref py py-const docutils literal"><span class="pre">UDP</span></tt>,
+<tt class="xref py py-const docutils literal"><span class="pre">TCP</span></tt>, or <tt class="xref py py-const docutils literal"><span class="pre">UNIX</span></tt>).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Server.fileno">
+<tt class="descname">fileno</tt><big>(</big><big>)</big><a class="headerlink" href="#liblo.Server.fileno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the file descriptor of the server socket, or -1 if not
+supported by the underlying server protocol.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Server.free">
+<tt class="descname">free</tt><big>(</big><big>)</big><a class="headerlink" href="#liblo.Server.free" title="Permalink to this definition">¶</a></dt>
+<dd><p>Free the underlying server object and close its port.  Note that this
+will also happen automatically when the server is deallocated.</p>
+</dd></dl>
+
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="class">
+<dt id="liblo.ServerThread">
+<em class="property">class </em><tt class="descname">ServerThread</tt><a class="headerlink" href="#liblo.ServerThread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unlike <a class="reference internal" href="#liblo.Server" title="liblo.Server"><tt class="xref py py-class docutils literal"><span class="pre">Server</span></tt></a>, <tt class="xref py py-class docutils literal"><span class="pre">ServerThread</span></tt> uses its own thread which
+runs in the background to dispatch messages.
+<tt class="xref py py-class docutils literal"><span class="pre">ServerThread</span></tt> has the same methods as <tt class="xref py py-class docutils literal"><span class="pre">Server</span></tt>, with the
+exception of <a class="reference internal" href="#liblo.Server.recv" title="liblo.Server.recv"><tt class="xref py py-meth docutils literal"><span class="pre">Server.recv()</span></tt></a>. Instead, it defines two additional
+methods <a class="reference internal" href="#liblo.ServerThread.start" title="liblo.ServerThread.start"><tt class="xref py py-meth docutils literal"><span class="pre">start()</span></tt></a> and <a class="reference internal" href="#liblo.ServerThread.stop" title="liblo.ServerThread.stop"><tt class="xref py py-meth docutils literal"><span class="pre">stop()</span></tt></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Because liblo creates its own thread to receive and dispatch
+messages, callback functions will not be run in the main Python
+thread!</p>
+</div>
+<dl class="method">
+<dt id="liblo.ServerThread.ServerThread">
+<tt class="descname">ServerThread</tt><big>(</big><em>port</em><span class="optional">[</span>, <em>proto</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#liblo.ServerThread.ServerThread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <tt class="xref py py-class docutils literal"><span class="pre">ServerThread</span></tt> object, which can receive OSC messages.
+Unlike <a class="reference internal" href="#liblo.Server" title="liblo.Server"><tt class="xref py py-class docutils literal"><span class="pre">Server</span></tt></a>, <a class="reference internal" href="#liblo.ServerThread" title="liblo.ServerThread"><tt class="xref py py-class docutils literal"><span class="pre">ServerThread</span></tt></a> uses its own thread which
+runs in the background to dispatch messages.  Note that callback methods
+will not be run in the main Python thread!</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>port</strong> &#8211; a decimal port number or a UNIX socket path. If omitted, an
+arbitrary free UDP port will be used.</li>
+<li><strong>proto</strong> &#8211; one of the constants <tt class="xref py py-const docutils literal"><span class="pre">UDP</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">TCP</span></tt>, or <tt class="xref py py-const docutils literal"><span class="pre">UNIX</span></tt>;
+default is <tt class="xref py py-const docutils literal"><span class="pre">UDP</span></tt>.</li>
+<li><strong>reg_methods</strong> &#8211; <tt class="docutils literal"><span class="pre">False</span></tt> if you don&#8217;t want the init function to automatically
+register callbacks defined with the make_method decorator
+(keyword argument only).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ServerError</strong> &#8211; if creating the server fails, e.g. because the given port could not
+be opened.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.ServerThread.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#liblo.ServerThread.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the server thread. liblo will now start to dispatch any messages
+it receives.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.ServerThread.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#liblo.ServerThread.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the server thread.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="liblo.make_method">
+<em class="property">class </em><tt class="descname">make_method</tt><a class="headerlink" href="#liblo.make_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>A decorator that serves as a more convenient alternative to
+<a class="reference internal" href="#liblo.Server.add_method" title="liblo.Server.add_method"><tt class="xref py py-meth docutils literal"><span class="pre">Server.add_method()</span></tt></a>.</p>
+<dl class="method">
+<dt id="liblo.make_method.make_method">
+<tt class="descname">make_method</tt><big>(</big><em>path</em>, <em>typespec</em><span class="optional">[</span>, <em>user_data</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#liblo.make_method.make_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the path and argument types for which the decorated method
+is to be registered.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> &#8211; the message path to be handled by the registered method.
+<tt class="docutils literal"><span class="pre">None</span></tt> may be used as a wildcard to match any OSC message.</li>
+<li><strong>typespec</strong> &#8211; the argument types to be handled by the registered method.
+<tt class="docutils literal"><span class="pre">None</span></tt> may be used as a wildcard to match any OSC message.</li>
+<li><strong>user_data</strong> &#8211; An arbitrary object that will be passed on to the decorated
+method every time a matching message is received.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="utility-classes">
+<h2>Utility Classes<a class="headerlink" href="#utility-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="liblo.Address">
+<em class="property">class </em><tt class="descname">Address</tt><a class="headerlink" href="#liblo.Address" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="liblo.Address.Address">
+<tt class="descname">Address</tt><big>(</big><em>hostname</em>, <em>port</em><span class="optional">[</span>, <em>proto</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#liblo.Address.Address" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">Address</tt><big>(</big><em>port</em><big>)</big></dt>
+<dt>
+<tt class="descname">Address</tt><big>(</big><em>url</em><big>)</big></dt>
+<dd><p>Create a new <tt class="xref py py-class docutils literal"><span class="pre">Address</span></tt> object from the given hostname/port
+or URL.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hostname</strong> &#8211; the target&#8217;s hostname.</li>
+<li><strong>port</strong> &#8211; the port number on the target.</li>
+<li><strong>proto</strong> &#8211; one of the constants <tt class="xref py py-const docutils literal"><span class="pre">UDP</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">TCP</span></tt>, or <tt class="xref py py-const docutils literal"><span class="pre">UNIX</span></tt>.</li>
+<li><strong>url</strong> &#8211; a URL in liblo notation, e.g. <tt class="docutils literal"><span class="pre">'osc.udp://hostname:1234/'</span></tt>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>AddressError</strong> &#8211; if the given parameters do not represent a valid address.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="liblo.Address.url">
+<tt class="descname">url</tt><a class="headerlink" href="#liblo.Address.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>The address&#8217;s URL.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="liblo.Address.hostname">
+<tt class="descname">hostname</tt><a class="headerlink" href="#liblo.Address.hostname" title="Permalink to this definition">¶</a></dt>
+<dd><p>The address&#8217;s hostname.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="liblo.Address.port">
+<tt class="descname">port</tt><a class="headerlink" href="#liblo.Address.port" title="Permalink to this definition">¶</a></dt>
+<dd><p>The address&#8217;s port number.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="liblo.Address.protocol">
+<tt class="descname">protocol</tt><a class="headerlink" href="#liblo.Address.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>The address&#8217;s protocol (one of the constants <tt class="xref py py-const docutils literal"><span class="pre">UDP</span></tt>,
+<tt class="xref py py-const docutils literal"><span class="pre">TCP</span></tt>, or <tt class="xref py py-const docutils literal"><span class="pre">UNIX</span></tt>).</p>
+</dd></dl>
+
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="class">
+<dt id="liblo.Message">
+<em class="property">class </em><tt class="descname">Message</tt><a class="headerlink" href="#liblo.Message" title="Permalink to this definition">¶</a></dt>
+<dd><p>An OSC message, consisting of a path and arbitrary arguments.</p>
+<dl class="method">
+<dt id="liblo.Message.Message">
+<tt class="descname">Message</tt><big>(</big><em>path</em>, <em>*args</em><big>)</big><a class="headerlink" href="#liblo.Message.Message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <tt class="xref py py-class docutils literal"><span class="pre">Message</span></tt> object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Message.add">
+<tt class="descname">add</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#liblo.Message.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append the given arguments to the message.
+Arguments can be single values or <tt class="docutils literal"><span class="pre">(typetag,</span> <span class="pre">data)</span></tt> tuples.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="liblo.Bundle">
+<em class="property">class </em><tt class="descname">Bundle</tt><a class="headerlink" href="#liblo.Bundle" title="Permalink to this definition">¶</a></dt>
+<dd><p>A bundle of one or more messages to be sent and dispatched together.</p>
+<dl class="method">
+<dt id="liblo.Bundle.Bundle">
+<tt class="descname">Bundle</tt><big>(</big><span class="optional">[</span><em>timetag</em>, <span class="optional">]</span><em>*messages</em><big>)</big><a class="headerlink" href="#liblo.Bundle.Bundle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <a class="reference internal" href="#liblo.Bundle" title="liblo.Bundle"><tt class="xref py py-class docutils literal"><span class="pre">Bundle</span></tt></a> object.  You can optionally specify a
+time at which the messages should be dispatched (as an OSC timetag
+float), and any number of messages to be included in the bundle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="liblo.Bundle.add">
+<tt class="descname">add</tt><big>(</big><em>*messages</em><big>)</big><a class="headerlink" href="#liblo.Bundle.add" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">add</tt><big>(</big><em>path</em>, <em>*args</em><big>)</big></dt>
+<dd><p>Add one or more messages to the bundle.</p>
+</dd></dl>
+
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="exception">
+<dt id="liblo.ServerError">
+<em class="property">exception </em><tt class="descname">ServerError</tt><a class="headerlink" href="#liblo.ServerError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when creating a liblo OSC server fails.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="liblo.AddressError">
+<em class="property">exception </em><tt class="descname">AddressError</tt><a class="headerlink" href="#liblo.AddressError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when trying to create an invalid <a class="reference internal" href="#liblo.Address" title="liblo.Address"><tt class="xref py py-class docutils literal"><span class="pre">Address</span></tt></a> object.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="mapping-between-osc-and-python-data-types">
+<h2>Mapping between OSC and Python data types<a class="headerlink" href="#mapping-between-osc-and-python-data-types" title="Permalink to this headline">¶</a></h2>
+<p>When constructing a message, pyliblo automatically converts
+arguments to an appropriate OSC data type.
+To explicitly specify the OSC data type to be transmitted, pass a
+<tt class="docutils literal"><span class="pre">(typetag,</span> <span class="pre">data)</span></tt> tuple instead. Some types can&#8217;t be unambiguously
+recognized, so they can only be sent that way.</p>
+<p>The mapping between OSC and Python data types is shown in the following table:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="9%" />
+<col width="15%" />
+<col width="76%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">typetag</th>
+<th class="head">OSC&nbsp;data&nbsp;type</th>
+<th class="head">Python data type</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'i'</span></tt></td>
+<td>int32</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">int</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'h'</span></tt></td>
+<td>int64</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">long</span></tt> (Python 2.x), <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt> (Python 3.x)</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'f'</span></tt></td>
+<td>float</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">float</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'d'</span></tt></td>
+<td>double</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">float</span></tt></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'c'</span></tt></td>
+<td>char</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">str</span></tt> (single character)</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'s'</span></tt></td>
+<td>string</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'S'</span></tt></td>
+<td>symbol</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">str</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'m'</span></tt></td>
+<td>midi</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt> of four <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>s</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'t'</span></tt></td>
+<td>timetag</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">float</span></tt></td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'T'</span></tt></td>
+<td>true</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'F'</span></tt></td>
+<td>false</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'N'</span></tt></td>
+<td>nil</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">'I'</span></tt></td>
+<td>infinitum</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">'b'</span></tt></td>
+<td>blob</td>
+<td><tt class="xref py py-class docutils literal"><span class="pre">list</span></tt> of <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>s (Python 2.x), <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> (Python 3.x)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pyliblo 0.10 API Documentation</a><ul>
+<li><a class="reference internal" href="#module-level-functions">Module-level Functions</a></li>
+<li><a class="reference internal" href="#osc-server-classes">OSC Server Classes</a></li>
+<li><a class="reference internal" href="#utility-classes">Utility Classes</a></li>
+<li><a class="reference internal" href="#mapping-between-osc-and-python-data-types">Mapping between OSC and Python data types</a></li>
+</ul>
+</li>
+</ul>
+
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">pyliblo  documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2007-2014, Dominic Sacré.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
