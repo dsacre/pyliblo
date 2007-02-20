@@ -28,7 +28,7 @@ setup(
     author = 'Dominic Sacré',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
-    description = 'Python wrapper for the liblo OSC library',
+    description = 'A Python wrapper for the liblo OSC library',
     license = "GPL",
     scripts = [
         'scripts/send_osc',

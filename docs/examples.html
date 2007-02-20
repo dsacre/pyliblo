@@ -22,7 +22,7 @@
 <h1>pyliblo - Example Code</h1>
 
 <p>
-Just some useless code to showcase what you can do with pyliblo.
+Just some useless code to show what you can do with pyliblo.
 </p>
 <p>
 Also take a look at the send_osc and dump_osc scripts, for tiny but functional examples.
@@ -66,7 +66,6 @@ except liblo.ServerError, err:
     print str(err)
     sys.exit()
 
-# register some callback methods
 def foo_bar_callback(path, args):
     print "received message '%s' with arguments '%d' and '%f'" % (path, args[0][1], args[1][1])
 
