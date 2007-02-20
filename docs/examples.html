@@ -21,12 +21,19 @@
 
 <h1>pyliblo - Example Code</h1>
 
+<p>
+Just some useless code to showcase what you can do with pyliblo.
+</p>
+<p>
+Also take a look at the send_osc and dump_osc scripts, for tiny but functional examples.
+</p>
+
 <h2>Client Side</h2>
 
 <pre>
 # send all messages to port 1234 on the local machine
 try:
-    target = liblo.Address()
+    target = liblo.Address(1234)
 except liblo.AddressError, err:
     print str(err)
     sys.exit()
@@ -61,10 +68,10 @@ except liblo.ServerError, err:
 
 # register some callback methods
 def foo_bar_callback(path, args):
-    print "received message '/foo/bar' with arguments '%d' and '%f'" % (args[0][1], args[1][1])
+    print "received message '%s' with arguments '%d' and '%f'" % (path, args[0][1], args[1][1])
 
 def foo_baz_callback(path, args, src, data):
-    print "received message '/foo/baz'"
+    print "received message '%s'" % path
     print "blob contains %d bytes, user data was '%s'" % (len(args[0][1]), data)
 
 def fallback(path, args, src):

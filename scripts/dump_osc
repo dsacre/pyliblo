@@ -11,13 +11,12 @@
 
 import sys
 import liblo
-import array
-
-def array_to_hex(arr):
-    return " ".join([ (hex(v/16).upper()[-1] + hex(v%16).upper()[-1]) for v in arr ])
 
 
 class DumpOSC:
+
+    def blob_to_hex(self, arr):
+        return " ".join([ (hex(v/16).upper()[-1] + hex(v%16).upper()[-1]) for v in arr ])
 
     def callback(self, path, args, src):
         write = sys.stdout.write
@@ -31,12 +30,12 @@ class DumpOSC:
         # loop through arguments an print them
         for a in args:
             write(" ")
-            if a[1] == None:
+            if a[0] == None:
                 #unknown type
                 write("[unknown type]")
-            elif isinstance(a[1], array.array):
+            elif a[0] == 'b':
                 # it's a blob
-                write("[" + array_to_hex(a[1]) + "]")
+                write("[" + self.blob_to_hex(a[1]) + "]")
             else:
                # anything else
                 write(str(a[1]))
