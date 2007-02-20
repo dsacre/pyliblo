@@ -76,7 +76,7 @@ cdef extern from 'lo/lo.h':
 
 
 import inspect
-import array
+
 
 def _is_int(s):
     try: int(s)
@@ -123,8 +123,8 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         elif t == 'c': v = chr(argv[i].c)
         elif t == 's': v = &argv[i].s
         elif t == 'b':
-            # convert binary data to byte array
-            v = array.array('B')
+            # convert binary data to python list
+            v = []
             size = argv[i].i  # blob size
             for j from 0 <= j < size:
                 u = (&argv[i].s + 4)[j]  # blob data, starts at the fifth byte

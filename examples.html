@@ -3,42 +3,39 @@
 <html lang="en">
 
 <head>
-  <title>pyliblo - Examples</title>
+  <title>pyliblo - Example Code</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <style type="text/css">
-    body { max-width: 60em; }
+    body { max-width: 60em; font-size: 95%; }
     h1 { font-size: 130%; color: #333; background: #eee; padding: 4px 0.5em; }
     h2 { font-size: 120%; color: #fff; background: #667; padding: 4px 1em; margin-top: 1.5em; }
     h3 { font-size: 110%; color: #333; padding-left: 0.5em; margin-bottom: 0.4em; }
-    p,table { margin-left: 0.8em; margin-top: 0.4em; }
+    p,table,pre { margin-left: 0.8em; margin-top: 0.4em; }
     b { color: #333; }
     th { color: #333; text-align: left; background: #eee; }
+    pre { font-size: 110%; }
   </style>
 </head>
 
 <body>
 
-<h1>pyliblo - Examples</h1>
+<h1>pyliblo - Example Code</h1>
 
-<h2>Client</h2>
+<h2>Client Side</h2>
 
 <pre>
-#!/usr/bin/env python
-
-import liblo
-import sys
-
 # send all messages to port 1234 on the local machine
 try:
     target = liblo.Address()
 except liblo.AddressError, err:
-    sys.exit(str(err))
+    print str(err)
+    sys.exit()
 
-# send message "/foo/bar" with int, float and string arguments
-liblo.send(target, "/foo/bar", 123, 456.789, "test")
+# send message "/foo/message1" with int, float and string arguments
+liblo.send(target, "/foo/message1", 123, 456.789, "test")
 
 # send double, int64 and char
-liblo.send(target, "/foo/a/b/c", ('d', 3.1415), ('h', 2**42), ('c', 'x'))
+liblo.send(target, "/foo/message2", ('d', 3.1415), ('h', 2**42), ('c', 'x'))
 
 # we can also build a message object first...
 msg = liblo.Message("/foo/blah")
@@ -49,39 +46,42 @@ liblo.send(target, msg)
 
 # send a list of bytes as a blob
 blob = [4, 8, 15, 16, 23, 42]
-liblo.send(target, "/foo/x/y", ('b', blob))
+liblo.send(target, "/foo/blob", ('b', blob))
 </pre>
 
-<h2>Server</h2>
+<h2>Server Side</h2>
 
 <pre>
-#!/usr/bin/env python
-
-import liblo
-import sys
-
 # create server, listening on port 1234
 try:
     server = liblo.Server(1234)
 except liblo.ServerError, err:
-    sys.exit(str(err))
-    
-def foo_bar_callback(path, args):
-    # print first argument
-    print arg[0][1]
-    # print second argument
-    print arg[1][1]
+    print str(err)
+    sys.exit()
 
+# register some callback methods
+def foo_bar_callback(path, args):
+    print "received message '/foo/bar' with arguments '%d' and '%f'" % (args[0][1], args[1][1])
+
+def foo_baz_callback(path, args, src, data):
+    print "received message '/foo/baz'"
+    print "blob contains %d bytes, user data was '%s'" % (len(args[0][1]), data)
 
 def fallback(path, args, src):
-    print "got unknown message from " + src.get_url()
-
+    print "got unknown message '%s' from '%s'" % (path, src.get_url())
 
 # register method taking an int and a float
 server.add_method("/foo/bar", 'if', foo_bar_callback)
 
+# register method taking a blob, and passing user data to the callback
+server.add_method("/foo/baz", 'b', foo_baz_callback, "blah")
 
+# register a fallback for unhandled messages
 server.add_method(None, None, fallback)
+
+# loop and dispatch messages every 100ms
+while True:
+    server.recv(100)
 </pre>
 
 </body>
