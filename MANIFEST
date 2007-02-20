@@ -1,0 +1,9 @@
+README
+COPYING
+setup.py
+liblo/liblo.pyx
+liblo/liblo.c
+scripts/dump_osc
+scripts/send_osc
+docs/API.html
+docs/examples.html
