@@ -15,8 +15,8 @@ import liblo
 
 class DumpOSC:
 
-    def blob_to_hex(self, arr):
-        return " ".join([ (hex(v/16).upper()[-1] + hex(v%16).upper()[-1]) for v in arr ])
+    def blob_to_hex(self, b):
+        return " ".join([ (hex(v/16).upper()[-1] + hex(v%16).upper()[-1]) for v in b ])
 
     def callback(self, path, args, src):
         write = sys.stdout.write
