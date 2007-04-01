@@ -5,4 +5,4 @@ Copyright (C) 2007  Dominic Sacré  <dominic.sacre@gmx.de>
 
 To install, run "./setup.py install"
 
-See docs/API.html and docs/examples.html for documentation.
+See doc/API.html and doc/examples.html for documentation.
