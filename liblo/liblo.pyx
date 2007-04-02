@@ -84,6 +84,14 @@ def _is_int(s):
     else: return True
 
 
+class Argument:
+    def __init__(self, type, value):
+        self.type = type
+        self.value = value
+    def __getitem__(self, i):
+        return (self.type, self.value)[i]
+
+
 cdef class Address
 cdef class Message
 
@@ -127,10 +135,10 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
             v = []
             size = argv[i].i  # blob size
             for j from 0 <= j < size:
-                u = (&argv[i].s + 4)[j]  # blob data, starts at the fifth byte
+                u = (&argv[i].s + 4)[j]  # blob data, starts at 5th byte
                 v.append(u)
         else: v = None  # unhandled data type
-        args.append((t, v))
+        args.append(Argument(t, v))
 
     src = Address(lo_address_get_url(lo_message_get_source(msg)))
 
@@ -315,7 +323,7 @@ cdef class Message:
 
         # single argument...
         arg = args[0]
-        if isinstance(arg, tuple):
+        if isinstance(arg, tuple) or isinstance(arg, Argument):
             if (arg[0] == 'i'):
                 lo_message_add_int32(self._msg, arg[1])
             elif (arg[0] == 'h'):

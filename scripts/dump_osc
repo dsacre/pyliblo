@@ -27,18 +27,18 @@ class DumpOSC:
         #print typespec
         types = "".join([x for x,y in args])
         write(types)
-        # loop through arguments an print them
+        # loop through arguments and print them
         for a in args:
             write(" ")
-            if a[0] == None:
+            if a.type == None:
                 #unknown type
                 write("[unknown type]")
-            elif a[0] == 'b':
+            elif a.type == 'b':
                 # it's a blob
-                write("[" + self.blob_to_hex(a[1]) + "]")
+                write("[" + self.blob_to_hex(a.value) + "]")
             else:
                # anything else
-                write(str(a[1]))
+                write(str(a.value))
         write('\n')
 
     def __init__(self, port = None):

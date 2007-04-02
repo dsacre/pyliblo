@@ -27,9 +27,9 @@
 
 <h3>Server([port])</h3>
 <p>
-Constructs a new Server object, which can receive OSC messages.<br>
+Constructs a new <b>Server</b> object, which can receive OSC messages.<br>
 port may be a decimal port number or a UNIX socket path.
-If omitted, any free UDP port will be used.<br>
+If omitted, a random free UDP port will be used.<br>
 Exceptions: <b>ServerError</b>
 </p>
 
@@ -56,8 +56,9 @@ my_callback(self, path, args[, src[, user_data]])</h3>
 <p>
 User-defined callback function, to be registered using add_method();
 called when a matching OSC message is received.<br>
-args will be a list of tuples, with each tuple containing the argument's typespec and data.
-src will be an Address object, containing the address the message came from.
+args will be a list of objects of type <b>Argument</b>, each containing the argument's typespec and data,
+which can be accessed through args[n].type and args[n].value, respectively.<br>
+src is an <b>Address</b> object, containing the address the message came from.
 src and user_data may be omitted if not needed.
 </p>
 
@@ -73,7 +74,7 @@ Returns True if a message was received, False otherwise.
 send(target, path[, arg, ...])</h3>
 <p>
 Sends a message from this server to the the given target.<br>
-target may be an Address object, a port number, a (hostname,port) tuple, or a URL.
+target may be an <b>Address</b> object, a port number, a (hostname,port) tuple, or a URL.
 See <b>Message</b> for possible argument types.<br>
 Exceptions: <b>AddressError</b>
 </p>
@@ -84,7 +85,7 @@ Exceptions: <b>AddressError</b>
 Address(port)<br>
 Address(url)</h3>
 <p>
-Constructs a new Address object from the given hostname/port or URL.<br>
+Constructs a new <b>Address</b> object from the given hostname/port or URL.<br>
 Exceptions: <b>AddressError</b>
 </p>
 
@@ -107,7 +108,7 @@ Returns the address' port number.
 
 <h3>Message(path[, arg, ...])</h3>
 <p>
-Constructs a new Message object.
+Constructs a new <b>Message</b> object.
 </p>
 
 <h3>add(arg[, ...])</h3>
@@ -137,7 +138,7 @@ send(target, path[, arg, ...])</h3>
 <p>
 
 Sends a message to the the given target, without requiring a server.<br>
-target may be an Address object, a port number, a (hostname,port) tuple, or a URL.
+target may be an <b>Address</b> object, a port number, a (hostname,port) tuple, or a URL.
 See <b>Message</b> for possible argument types.<br>
 Exceptions: <b>AddressError</b>
 </p>

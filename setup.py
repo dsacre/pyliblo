@@ -24,8 +24,8 @@ else:
 
 setup(
     name = 'pyliblo',
-    version = '0.1',
-    author = u'Dominic Sacré',
+    version = '0.2',
+    author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
     description = 'A Python wrapper for the liblo OSC library',

@@ -67,11 +67,11 @@ except liblo.ServerError, err:
     sys.exit()
 
 def foo_bar_callback(path, args):
-    print "received message '%s' with arguments '%d' and '%f'" % (path, args[0][1], args[1][1])
+    print "received message '%s' with arguments '%d' and '%f'" % (path, args[0].value, args[1].value)
 
 def foo_baz_callback(path, args, src, data):
     print "received message '%s'" % path
-    print "blob contains %d bytes, user data was '%s'" % (len(args[0][1]), data)
+    print "blob contains %d bytes, user data was '%s'" % (len(args[0].value), data)
 
 def fallback(path, args, src):
     print "got unknown message '%s' from '%s'" % (path, src.get_url())
