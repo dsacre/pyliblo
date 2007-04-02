@@ -18,13 +18,19 @@ cdef extern from 'stdlib.h':
     void *malloc(size_t size)
     void free(void *ptr)
 
+cdef extern from "Python.h":
+    ctypedef void *PyGILState_STATE
+    PyGILState_STATE PyGILState_Ensure()
+    void PyGILState_Release(PyGILState_STATE)
+
 cdef extern from 'lo/lo.h':
     # type definitions
-    ctypedef void* lo_server
-    ctypedef void* lo_method
-    ctypedef void* lo_address
-    ctypedef void* lo_message
-    ctypedef void* lo_blob
+    ctypedef void *lo_server
+    ctypedef void *lo_server_thread
+    ctypedef void *lo_method
+    ctypedef void *lo_address
+    ctypedef void *lo_message
+    ctypedef void *lo_blob
 
     ctypedef union lo_arg:
         int32_t i
@@ -45,6 +51,13 @@ cdef extern from 'lo/lo.h':
     lo_method lo_server_add_method(lo_server s, char *path, char *typespec, lo_method_handler h, void *user_data)
     int lo_server_recv(lo_server s)
     int lo_server_recv_noblock(lo_server s, int timeout)
+
+    # server thread
+    lo_server_thread lo_server_thread_new(char *port, lo_err_handler err_h)
+    void lo_server_thread_free(lo_server_thread st)
+    lo_server lo_server_thread_get_server(lo_server_thread st)
+    void lo_server_thread_start(lo_server_thread st)
+    void lo_server_thread_stop(lo_server_thread st)
 
     # address
     lo_address lo_address_new(char *host, char *port)
@@ -119,37 +132,44 @@ class _CallbackData:
 
 
 cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
+    cdef PyGILState_STATE gil
     cdef unsigned char u
 
-    args = []
-    for i in range(argc):
-        t = chr(types[i])
-        if   t == 'i': v = argv[i].i
-        elif t == 'h': v = argv[i].h
-        elif t == 'f': v = argv[i].f
-        elif t == 'd': v = argv[i].d
-        elif t == 'c': v = chr(argv[i].c)
-        elif t == 's': v = &argv[i].s
-        elif t == 'b':
-            # convert binary data to python list
-            v = []
-            size = argv[i].i  # blob size
-            for j from 0 <= j < size:
-                u = (&argv[i].s + 4)[j]  # blob data, starts at 5th byte
-                v.append(u)
-        else: v = None  # unhandled data type
-        args.append(Argument(t, v))
+    # acquire the global interpreter lock. this is only really required when not run from the
+    # main thread (ServerThread), but shouldn't hurt either way.
+    gil = PyGILState_Ensure()
+    try:
+        args = []
+        for i in range(argc):
+            t = chr(types[i])
+            if   t == 'i': v = argv[i].i
+            elif t == 'h': v = argv[i].h
+            elif t == 'f': v = argv[i].f
+            elif t == 'd': v = argv[i].d
+            elif t == 'c': v = chr(argv[i].c)
+            elif t == 's': v = &argv[i].s
+            elif t == 'b':
+                # convert binary data to python list
+                v = []
+                size = argv[i].i  # blob size
+                for j from 0 <= j < size:
+                    u = (&argv[i].s + 4)[j]  # blob data, starts at 5th byte
+                    v.append(u)
+            else: v = None  # unhandled data type
+            args.append(Argument(t, v))
 
-    src = Address(lo_address_get_url(lo_message_get_source(msg)))
+        src = Address(lo_address_get_url(lo_message_get_source(msg)))
 
-    cb = <object>cb_data
-    func_args = (path, args, src, cb.data)
+        cb = <object>cb_data
+        func_args = (path, args, src, cb.data)
 
-    # number of arguments to call the function with
-    n = len(inspect.getargspec(cb.func)[0])
-    if inspect.ismethod(cb.func): n = n - 1  # self doesn't count
+        # number of arguments to call the function with
+        n = len(inspect.getargspec(cb.func)[0])
+        if inspect.ismethod(cb.func): n = n - 1  # self doesn't count
 
-    cb.func(*func_args[0:n])
+        cb.func(*func_args[0:n])
+    finally:
+        PyGILState_Release(gil)
     return 0
 
 
@@ -160,24 +180,11 @@ cdef void _err_handler(int num, char *msg, char *where):
     if where: __exception.where = where
 
 
-cdef class Server:
+# common base class for both Server and ServerThread
+
+cdef class _ServerBase:
     cdef lo_server _serv
     cdef object _keep_refs
-
-    def __init__(self, port = None):
-        cdef char *cs
-        self._keep_refs = []
-        p = str(port); cs = p
-        if port == None:
-            cs = NULL
-        global __exception
-        __exception = None
-        self._serv = lo_server_new(cs, _err_handler)
-        if __exception:
-            raise __exception
-
-    def __dealloc__(self):
-        lo_server_free(self._serv)
 
     def get_url(self):
         return lo_server_get_url(self._serv)
@@ -201,14 +208,6 @@ cdef class Server:
         self._keep_refs.append(cb)
         lo_server_add_method(self._serv, p, t, _callback, <void*>cb)
 
-    def recv(self, timeout = None):
-        if timeout:
-            r = lo_server_recv_noblock(self._serv, timeout)
-            return r and True or False
-        else:
-            lo_server_recv(self._serv)
-            return True
-
     def send(self, target, msg, *data):
         if isinstance(target, Address):
             a = target
@@ -225,6 +224,59 @@ cdef class Server:
         lo_send_message_from((<Address>a)._addr, self._serv, (<Message>m).path, (<Message>m)._msg)
 
 
+cdef class Server(_ServerBase):
+
+    def __new__(self, port = None):
+        cdef char *cs
+        self._keep_refs = []
+        p = str(port); cs = p
+        if port == None:
+            cs = NULL
+        global __exception
+        __exception = None
+        self._serv = lo_server_new(cs, _err_handler)
+        if __exception:
+            raise __exception
+
+    def __dealloc__(self):
+        lo_server_free(self._serv)
+
+    def recv(self, timeout = None):
+        if timeout:
+            r = lo_server_recv_noblock(self._serv, timeout)
+            return r and True or False
+        else:
+            lo_server_recv(self._serv)
+            return True
+
+
+cdef class ServerThread(_ServerBase):
+    cdef lo_server_thread _thread
+
+    def __new__(self, port = None):
+        cdef char *cs
+        self._keep_refs = []
+        p = str(port); cs = p
+        if port == None:
+            cs = NULL
+        global __exception
+        __exception = None
+        self._thread = lo_server_thread_new(cs, _err_handler)
+        if __exception:
+            raise __exception
+        self._serv = lo_server_thread_get_server(self._thread)
+
+    def __dealloc__(self):
+        lo_server_thread_stop(self._thread)
+        lo_server_thread_free(self._thread)
+
+    def start(self):
+        lo_server_thread_start(self._thread)
+
+    def stop(self):
+        lo_server_thread_stop(self._thread)
+
+
 ################################################################################################
 #  Address
 ################################################################################################
@@ -239,7 +291,7 @@ class AddressError:
 cdef class Address:
     cdef lo_address _addr
 
-    def __init__(self, a, b = None):
+    def __new__(self, a, b = None):
         cdef char *cs
 
         if b:
@@ -280,7 +332,7 @@ cdef class Address:
 cdef class _Blob:
     cdef lo_blob _blob
 
-    def __init__(self, arr):
+    def __new__(self, arr):
         # supported types include list, tuple and array('B')
         cdef unsigned char *p
         size = len(arr)
@@ -301,7 +353,7 @@ cdef class Message:
     cdef lo_message _msg
     cdef object _keep_refs
 
-    def __init__(self, char *path, *data):
+    def __new__(self, char *path, *data):
         self._keep_refs = []
         self.path = path
         self._msg = lo_message_new()
