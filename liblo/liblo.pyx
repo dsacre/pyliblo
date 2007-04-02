@@ -90,6 +90,7 @@ cdef extern from 'lo/lo.h':
 
 
 import inspect
+import exceptions
 
 
 def _is_int(s):
@@ -209,11 +210,11 @@ cdef class _ServerBase:
 
         if isinstance(path, str): p = path
         elif path == None:        p = NULL
-        else: raise TypeError("path must be string or None")
+        else: raise TypeError("path must be a string or None")
 
         if isinstance(typespec, str): t = typespec
         elif typespec == None:        t = NULL
-        else: raise TypeError("typespec must be string or None")
+        else: raise TypeError("typespec must be a string or None")
 
         cb = _CallbackData(func, user_data)
         self._keep_refs.append(cb)
@@ -288,7 +289,6 @@ cdef class ServerThread(_ServerBase):
         self._cb_func = _callback_threaded
 
     def __dealloc__(self):
-#        lo_server_thread_stop(self._thread)
         lo_server_thread_free(self._thread)
 
     def start(self):

@@ -33,6 +33,36 @@ If omitted, a random free UDP port will be used.<br>
 Exceptions: <b>ServerError</b>
 </p>
 
+<h3>recv([timeout])</h3>
+<p>
+Receives and dispatches one OSC message.
+Blocking by default, unless timeout (in ms) is specified.<br>
+timeout may be 0, in which case recv() returns immediately.
+Returns True if a message was received, False otherwise.
+</p>
+
+<h2>ServerThread</h2>
+
+<h3>ServerThread([port])</h3>
+<p>
+Constructs a new <b>ServerThread</b> object.<br>
+Unlike <b>Server</b>, <b>ServerThread</b> uses its own thread which runs in the background to dispatch messages.
+Note that callback methods will not be run in the main Python thread!<br>
+Exceptions: <b>ServerError</b>
+</p>
+
+<h3>start()</h3>
+<p>
+Starts the server thread, liblo will now start to dispatch any messages it receives.
+</p>
+
+<h3>stop()</h3>
+<p>
+Stops the server thread.
+</p>
+
+<h2>Common methods of both Server and ServerThread</h2>
+
 <h3>get_url()</h3>
 <p>
 Returns the server's URL.
@@ -60,14 +90,6 @@ args will be a list of objects of type <b>Argument</b>, each containing the argu
 which can be accessed through args[n].type and args[n].value, respectively.<br>
 src is an <b>Address</b> object, containing the address the message came from.
 src and user_data may be omitted if not needed.
-</p>
-
-<h3>recv([timeout])</h3>
-<p>
-Receives and dispatches an OSC message.
-Blocking by default, unless timeout (in ms) is specified.<br>
-timeout may be 0, in which case recv() returns immediately.
-Returns True if a message was received, False otherwise.
 </p>
 
 <h3>send(target, message)<br>
