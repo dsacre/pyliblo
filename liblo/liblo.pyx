@@ -192,7 +192,7 @@ cdef void _err_handler(int num, char *msg, char *where):
 
 cdef class _ServerBase:
     cdef lo_server _serv
-    cdef int (*_cb_func)(char*, char*, lo_arg**, int, lo_message, void*)
+    cdef lo_method_handler _cb_func
     cdef object _keep_refs
 
     def __init__(self):
