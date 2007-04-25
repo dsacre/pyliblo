@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from distutils.core import setup, Extension
+from distutils.command.build_scripts import build_scripts
+from distutils import util
+import os, errno
+
 try:
     from Pyrex.Distutils import build_ext
 except ImportError:
@@ -10,6 +14,8 @@ except ImportError:
         'ext_modules': [
             Extension('liblo', ['liblo/liblo.c'], libraries = ['lo'])
         ],
+        'cmdclass': {
+        }
     }
 else:
     # build with pyrex
@@ -19,20 +25,33 @@ else:
         ],
         'cmdclass': {
             'build_ext': build_ext
-        },
+        }
     }
 
-setup(
+class build_scripts_rename(build_scripts):
+    def copy_scripts(self):
+        build_scripts.copy_scripts(self)
+        # remove the .py extension from scripts
+        for s in self.scripts:
+            f = util.convert_path(s)
+            before = os.path.join(self.build_dir, os.path.basename(f))
+            after = os.path.splitext(before)[0]
+            print "renaming", before, "->", after
+            os.rename(before, after)
+
+kwargs['cmdclass']['build_scripts'] = build_scripts_rename
+
+setup (
     name = 'pyliblo',
-    version = '0.3',
+    version = '0.4',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
     description = 'A Python wrapper for the liblo OSC library',
     license = "GPL",
     scripts = [
-        'scripts/send_osc',
-        'scripts/dump_osc',
+        'scripts/send_osc.py',
+        'scripts/dump_osc.py',
     ],
     **kwargs
 )

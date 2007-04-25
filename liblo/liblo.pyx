@@ -99,14 +99,6 @@ def _is_int(s):
     else: return True
 
 
-class Argument:
-    def __init__(self, type, value):
-        self.type = type
-        self.value = value
-    def __getitem__(self, i):
-        return (self.type, self.value)[i]
-
-
 cdef class Address
 cdef class Message
 
@@ -133,11 +125,17 @@ class _CallbackData:
         self.data = data
 
 
+# helper function, used as a member of the dynamically created class Argument.
+# returns self, cast to its base class
+def _get_value(self):
+    return inspect.getmro(self.__class__)[1](self)
+
+
 cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
     cdef unsigned char u
-
     args = []
-    for i in range(argc):
+
+    for i from 0 <= i < argc:
         t = chr(types[i])
         if   t == 'i': v = argv[i].i
         elif t == 'h': v = argv[i].h
@@ -152,8 +150,16 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
             for j from 0 <= j < size:
                 u = (&argv[i].s + 4)[j]  # blob data, starts at 5th byte
                 v.append(u)
-        else: v = None  # unhandled data type
-        args.append(Argument(t, v))
+        else:
+            v = None  # unhandled data type
+
+        # create a new class, derived from the type of this argument
+        Argument = type(
+            'Argument', (type(v),),
+            { 'value': property(_get_value),
+              'type': t }
+        )
+        args.append(Argument(v))
 
     src = Address(lo_address_get_url(lo_message_get_source(msg)))
 
@@ -354,12 +360,16 @@ cdef class _Blob:
     cdef lo_blob _blob
 
     def __init__(self, arr):
-        # supported types include list, tuple and array('B')
+        # arr can by any sequence type
         cdef unsigned char *p
         size = len(arr)
+        if (size < 1):
+            raise ValueError("blob is empty")
         # copy each element of arr to c array
         p = <unsigned char*>malloc(size)
         for i from 0 <= i < size:
+            if arr[i] < 0 or arr[i] > 255:
+                raise ValueError("blob data value out of range")
             p[i] = arr[i]
         # build blob
         self._blob = lo_blob_new(size, p)
@@ -370,13 +380,13 @@ cdef class _Blob:
 
 
 cdef class Message:
-    cdef object path
+    cdef object _path
     cdef lo_message _msg
     cdef object _keep_refs
 
     def __init__(self, char *path, *data):
         self._keep_refs = []
-        self.path = path
+        self._path = path
         self._msg = lo_message_new()
 
         for i in data:
@@ -396,7 +406,7 @@ cdef class Message:
 
         # single argument...
         arg = args[0]
-        if isinstance(arg, tuple) or isinstance(arg, Argument):
+        if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
             if (arg[0] == 'i'):
                 lo_message_add_int32(self._msg, arg[1])
             elif (arg[0] == 'h'):
@@ -420,12 +430,16 @@ cdef class Message:
 
         elif isinstance(arg, int):
             self.add(('i', arg))
+        elif isinstance(arg, long):
+            self.add(('h', arg))
         elif isinstance(arg, float):
             self.add(('f', arg))
         elif isinstance(arg, str):
             self.add(('s', arg))
         else:
-            raise TypeError("message argument must be int, float, str or tuple")
+            try:    iter(arg)
+            except: raise TypeError("unsupported message argument type")
+            else:   self.add(('b', arg))
 
 
 ################################################################################################
@@ -445,4 +459,4 @@ def send(target, msg, *data):
     else:
         m = Message(msg, *data)
 
-    lo_send_message((<Address>a)._addr, (<Message>m).path, (<Message>m)._msg)
+    lo_send_message((<Address>a)._addr, (<Message>m)._path, (<Message>m)._msg)

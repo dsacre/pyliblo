@@ -20,12 +20,12 @@ class DumpOSC:
 
     def callback(self, path, args, src):
         write = sys.stdout.write
-        # print source
+        ## print source
         #write("from " + src.get_url() + ": ")
         # print path
         write(path + " ,")
         #print typespec
-        types = "".join([x for x,y in args])
+        types = "".join([x.type for x in args])
         write(types)
         # loop through arguments and print them
         for a in args:
@@ -35,7 +35,7 @@ class DumpOSC:
                 write("[unknown type]")
             elif a.type == 'b':
                 # it's a blob
-                write("[" + self.blob_to_hex(a.value) + "]")
+                write("[" + self.blob_to_hex(a) + "]")
             else:
                # anything else
                 write(str(a.value))

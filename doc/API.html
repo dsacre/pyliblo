@@ -7,8 +7,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <style type="text/css">
     body { max-width: 60em; font-size: 95%; }
-    h1 { font-size: 130%; color: #333; background: #eee; padding: 4px 0.5em; }
-    h2 { font-size: 120%; color: #fff; background: #667; padding: 4px 1em; margin-top: 1.5em; }
+    h1 { font-size: 130%; color: #333; background: #eee; padding: 4px 0.7em; }
+    h2 { font-size: 120%; color: #fff; background: #667; padding: 4px 0.7em; margin-top: 1.5em; }
     h3 { font-size: 110%; color: #333; padding-left: 0.5em; margin-bottom: 0.4em; }
     p,table,pre { margin-left: 0.8em; margin-top: 0.4em; }
     b { color: #333; }
@@ -19,17 +19,17 @@
 
 <body>
 
-<h1>pyliblo - API Documentation</h1>
+<h1>pyliblo 0.4 - API Documentation</h1>
 
 <h3>import liblo</h3>
 
-<h2>Server</h2>
+<h2>class Server</h2>
 
 <h3>Server([port])</h3>
 <p>
 Constructs a new <b>Server</b> object, which can receive OSC messages.<br>
 port may be a decimal port number or a UNIX socket path.
-If omitted, a random free UDP port will be used.<br>
+If omitted, an arbitrary free UDP port will be used.<br>
 Exceptions: <b>ServerError</b>
 </p>
 
@@ -41,7 +41,7 @@ timeout may be 0, in which case recv() returns immediately.
 Returns True if a message was received, False otherwise.
 </p>
 
-<h2>ServerThread</h2>
+<h2>class ServerThread</h2>
 
 <h3>ServerThread([port])</h3>
 <p>
@@ -61,7 +61,7 @@ Starts the server thread, liblo will now start to dispatch any messages it recei
 Stops the server thread.
 </p>
 
-<h2>Common methods of both Server and ServerThread</h2>
+<h2>common methods of both Server and ServerThread</h2>
 
 <h3>get_url()</h3>
 <p>
@@ -86,8 +86,10 @@ my_callback(self, path, args[, src[, user_data]])</h3>
 <p>
 User-defined callback function, to be registered using add_method();
 called when a matching OSC message is received.<br>
-args will be a list of objects of type <b>Argument</b>, each containing the argument's typespec and data,
-which can be accessed through args[n].type and args[n].value, respectively.<br>
+args will be a list of objects, each of a class derived from an appropriate built-in Python type.
+In most cases you can simply access args[n] directly, as if it were a built-in type.
+In addition, you can use args[n].type and args[n].value to retrieve the arguments typespec
+and value, respectively.<br>
 src is an <b>Address</b> object, containing the address the message came from.
 src and user_data may be omitted if not needed.
 </p>
@@ -96,12 +98,12 @@ src and user_data may be omitted if not needed.
 send(target, path[, arg, ...])</h3>
 <p>
 Sends a message from this server to the the given target.<br>
-target may be an <b>Address</b> object, a port number, a (hostname,port) tuple, or a URL.
+target may be an <b>Address</b> object, a port number, a (hostname, port) tuple, or a URL.
 See <b>Message</b> for possible argument types.<br>
 Exceptions: <b>AddressError</b>
 </p>
 
-<h2>Address</h2>
+<h2>class Address</h2>
 
 <h3>Address(hostname, port)<br>
 Address(port)<br>
@@ -126,7 +128,7 @@ Returns the address' hostname.
 Returns the address' port number.
 </p>
 
-<h2>Message</h2>
+<h2>class Message</h2>
 
 <h3>Message(path[, arg, ...])</h3>
 <p>
@@ -140,7 +142,8 @@ Appends the given argument(s) to the message.
 
 <h3>Argument types:</h3>
 <p>
-Each argument may be an int, float, string, or a (typespec,data) tuple to allow for greater control over the type to be transmitted.
+Each argument may be an int, long, float, string, any sequence type,
+or a (typespec, data) tuple to allow for greater control over the type to be transmitted.
 </p>
 <table border="1">
   <tr><th>data type</th><th>typespec</th><th>argument</th></tr>
@@ -150,17 +153,17 @@ Each argument may be an int, float, string, or a (typespec,data) tuple to allow 
   <tr><td>double</td><td>'d'</td><td>float</td></tr>
   <tr><td>char</td><td>'c'</td><td>single-character string</td></tr>
   <tr><td>string</td><td>'s'</td><td>string</td></tr>
-  <tr><td>blob</td><td>'b'</td><td>list, tuple, array.array('B')</td></tr>
+  <tr><td>blob</td><td>'b'</td><td>sequence (list, tuple, array.array('B'), ...)</td></tr>
 </table>
 
-<h2>Functions</h2>
+<h2>top-level functions</h2>
 
 <h3>send(target, message)<br>
 send(target, path[, arg, ...])</h3>
 <p>
 
 Sends a message to the the given target, without requiring a server.<br>
-target may be an <b>Address</b> object, a port number, a (hostname,port) tuple, or a URL.
+target may be an <b>Address</b> object, a port number, a (hostname, port) tuple, or a URL.
 See <b>Message</b> for possible argument types.<br>
 Exceptions: <b>AddressError</b>
 </p>
