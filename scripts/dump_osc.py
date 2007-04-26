@@ -18,27 +18,26 @@ class DumpOSC:
     def blob_to_hex(self, b):
         return " ".join([ (hex(v/16).upper()[-1] + hex(v%16).upper()[-1]) for v in b ])
 
-    def callback(self, path, args, src):
+    def callback(self, path, args, types, src):
         write = sys.stdout.write
         ## print source
         #write("from " + src.get_url() + ": ")
         # print path
         write(path + " ,")
-        #print typespec
-        types = "".join([x.type for x in args])
+        # print typespec
         write(types)
         # loop through arguments and print them
-        for a in args:
+        for a, t in zip(args, types):
             write(" ")
-            if a.type == None:
+            if t == None:
                 #unknown type
                 write("[unknown type]")
-            elif a.type == 'b':
+            elif t == 'b':
                 # it's a blob
                 write("[" + self.blob_to_hex(a) + "]")
             else:
                # anything else
-                write(str(a.value))
+                write(str(a))
         write('\n')
 
     def __init__(self, port = None):

@@ -90,7 +90,6 @@ cdef extern from 'lo/lo.h':
 
 
 import inspect
-import exceptions
 
 
 def _is_int(s):
@@ -125,12 +124,6 @@ class _CallbackData:
         self.data = data
 
 
-# helper function, used as a member of the dynamically created class Argument.
-# returns self, cast to its base class
-def _get_value(self):
-    return inspect.getmro(self.__class__)[1](self)
-
-
 cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
     cdef unsigned char u
     args = []
@@ -153,18 +146,12 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         else:
             v = None  # unhandled data type
 
-        # create a new class, derived from the type of this argument
-        Argument = type(
-            'Argument', (type(v),),
-            { 'value': property(_get_value),
-              'type': t }
-        )
-        args.append(Argument(v))
+        args.append(v)
 
     src = Address(lo_address_get_url(lo_message_get_source(msg)))
 
     cb = <object>cb_data
-    func_args = (path, args, src, cb.data)
+    func_args = (path, args, types, src, cb.data)
 
     # number of arguments to call the function with
     n = len(inspect.getargspec(cb.func)[0])

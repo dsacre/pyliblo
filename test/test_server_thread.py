@@ -6,21 +6,22 @@ import time
 st = liblo.ServerThread()
 print "Created Server Thread on Port", st.get_port()
 
-def foo_cb(path, args):
+def foo_cb(path, args, types):
     print "foo_cb():"
-    for a in args:
-        print "received argument %s of type %s" % (a, a.type)
+    for a, t in zip(args, types):
+        print "received argument %s of type %s" % (a, t)
 
-def bar_cb(path, args, src):
+def bar_cb(path, args, types, src):
     print "bar_cb():"
     print "message from", src.get_url()
-    for a in args:
-        print "received argument %s of type %s" % (a, a.type)
+    print "typespec:", types
+    for a, t in zip(args, types):
+        print "received argument %s of type %s" % (a, t)
 
 class Blah:
     def __init__(self, x):
         self.x = x
-    def baz_cb(self, path, args, src, user_data):
+    def baz_cb(self, path, args, types, src, user_data):
         print "baz_cb():"
         print args[0]
         print "self.x is", self.x, ", user data was", user_data
