@@ -81,17 +81,15 @@ The optional user_data will be passed on to the callback function.
 callback_func may be a global function or a class method, pyliblo will know what to do either way.
 </p>
 
-<h3>my_callback(path, args[, src[, user_data]])<br>
-my_callback(self, path, args[, src[, user_data]])</h3>
+<h3>my_callback(path, args[, types[, src[, user_data]]])<br>
+my_callback(self, path, args[, types[, src[, user_data]]])</h3>
 <p>
 User-defined callback function, to be registered using add_method();
 called when a matching OSC message is received.<br>
-args will be a list of objects, each of a class derived from an appropriate built-in Python type.
-In most cases you can simply access args[n] directly, as if it were a built-in type.
-In addition, you can use args[n].type and args[n].value to retrieve the arguments typespec
-and value, respectively.<br>
+args will be a list of message arguments, using appropriate built-in Python data types.
+blobs are passed as lists of integers. types is a string with the typespec of the message.<br>
 src is an <b>Address</b> object, containing the address the message came from.
-src and user_data may be omitted if not needed.
+types, src and user_data may be omitted if not needed.
 </p>
 
 <h3>send(target, message)<br>
