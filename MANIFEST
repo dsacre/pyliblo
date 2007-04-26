@@ -3,7 +3,7 @@ COPYING
 setup.py
 liblo/liblo.pyx
 liblo/liblo.c
-scripts/dump_osc
-scripts/send_osc
+scripts/dump_osc.py
+scripts/send_osc.py
 doc/API.html
 doc/examples.html
