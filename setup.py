@@ -43,7 +43,7 @@ kwargs['cmdclass']['build_scripts'] = build_scripts_rename
 
 setup (
     name = 'pyliblo',
-    version = '0.4',
+    version = '0.5',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
