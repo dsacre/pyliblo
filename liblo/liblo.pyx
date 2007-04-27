@@ -226,7 +226,7 @@ cdef class _ServerBase:
         else:
             m = Message(msg, *data)
 
-        lo_send_message_from((<Address>a)._addr, self._serv, (<Message>m).path, (<Message>m)._msg)
+        lo_send_message_from((<Address>a)._addr, self._serv, (<Message>m)._path, (<Message>m)._msg)
 
 
 cdef class Server(_ServerBase):
