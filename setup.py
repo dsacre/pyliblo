@@ -12,7 +12,7 @@ except ImportError:
     # no pyrex, build using existing .c file
     kwargs = {
         'ext_modules': [
-            Extension('liblo', ['liblo/liblo.c'], libraries = ['lo'])
+            Extension('liblo', ['src/liblo.c'], libraries = ['lo'])
         ],
         'cmdclass': {
         }
@@ -21,7 +21,7 @@ else:
     # build with pyrex
     kwargs = {
         'ext_modules': [
-            Extension('liblo', ['liblo/liblo.pyx'], libraries = ['lo'])
+            Extension('liblo', ['src/liblo.pyx'], libraries = ['lo'])
         ],
         'cmdclass': {
             'build_ext': build_ext

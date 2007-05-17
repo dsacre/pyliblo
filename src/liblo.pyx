@@ -11,7 +11,9 @@
 
 cdef extern from "stdint.h":
     ctypedef long int32_t
+    ctypedef unsigned long uint32_t
     ctypedef long long int64_t
+    ctypedef unsigned char uint8_t
 
 cdef extern from 'stdlib.h':
     ctypedef unsigned size_t
@@ -32,6 +34,11 @@ cdef extern from 'lo/lo.h':
     ctypedef void *lo_address
     ctypedef void *lo_message
     ctypedef void *lo_blob
+    ctypedef void *lo_bundle
+
+    ctypedef struct lo_timetag:
+        uint32_t sec
+        uint32_t frac
 
     ctypedef union lo_arg:
         int32_t i
@@ -40,6 +47,8 @@ cdef extern from 'lo/lo.h':
         double d
         unsigned char c
         char s
+        uint8_t m[4]
+        lo_timetag t
 
     ctypedef void(*lo_err_handler)(int num, char *msg, char *where)
     ctypedef int(*lo_method_handler)(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *user_data)
@@ -77,6 +86,12 @@ cdef extern from 'lo/lo.h':
     void lo_message_add_double(lo_message m, double a)
     void lo_message_add_char(lo_message m, char a)
     void lo_message_add_string(lo_message m, char *a)
+    void lo_message_add_symbol(lo_message m, char *a)
+    void lo_message_add_true(lo_message)
+    void lo_message_add_false(lo_message)
+    void lo_message_add_nil(lo_message)
+    void lo_message_add_infinitum(lo_message)
+    void lo_message_add_midi(lo_message, uint8_t a[4])
     void lo_message_add_blob(lo_message m, lo_blob a)
     lo_address lo_message_get_source(lo_message m)
 
@@ -84,9 +99,16 @@ cdef extern from 'lo/lo.h':
     lo_blob lo_blob_new(int32_t size, void *data)
     void lo_blob_free(lo_blob b)
 
+    # bundle
+    lo_bundle lo_bundle_new(lo_timetag tt)
+    void lo_bundle_free(lo_bundle b)
+    void lo_bundle_add_message(lo_bundle b, char *path, lo_message m)
+
     # "global" functions
     int lo_send_message(lo_address targ, char *path, lo_message msg)
     int lo_send_message_from(lo_address targ, lo_server serv, char *path, lo_message msg)
+    int lo_send_bundle(lo_address targ, lo_bundle b)
+    int lo_send_bundle_from(lo_address targ, lo_server serv, lo_bundle b)
 
 
 import inspect
@@ -100,6 +122,20 @@ def _is_int(s):
 
 cdef class Address
 cdef class Message
+
+def _make_address(addr):
+    if isinstance(addr, Address):
+        return addr
+    elif isinstance(addr, tuple):
+        return Address(addr[0], addr[1])
+    else:
+        return Address(addr)
+
+def _make_message(*msg):
+    if isinstance(msg[0], Message):
+        return msg[0]
+    else:
+        return Message(*msg)
 
 
 ################################################################################################
@@ -136,6 +172,13 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         elif t == 'd': v = argv[i].d
         elif t == 'c': v = chr(argv[i].c)
         elif t == 's': v = &argv[i].s
+        elif t == 'S': v = &argv[i].s
+        elif t == 'T': v = True
+        elif t == 'F': v = False
+        elif t == 'N': v = None
+        elif t == 'I': v = float('inf')
+        elif t == 'm': v = (argv[i].m[0], argv[i].m[1], argv[i].m[2], argv[i].m[3])
+### TODO: timetag
         elif t == 'b':
             # convert binary data to python list
             v = []
@@ -213,19 +256,9 @@ cdef class _ServerBase:
         self._keep_refs.append(cb)
         lo_server_add_method(self._serv, p, t, self._cb_func, <void*>cb)
 
-    def send(self, target, msg, *data):
-        if isinstance(target, Address):
-            a = target
-        elif isinstance(target, tuple):
-            a = Address(target[0], target[1])
-        else:
-            a = Address(target)
-
-        if isinstance(msg, Message):
-            m = msg
-        else:
-            m = Message(msg, *data)
-
+    def send(self, target, *msg):
+        a = _make_address(target)
+        m = _make_message(*msg)
         lo_send_message_from((<Address>a)._addr, self._serv, (<Message>m)._path, (<Message>m)._msg)
 
 
@@ -251,7 +284,7 @@ cdef class Server(_ServerBase):
         lo_server_free(self._serv)
 
     def recv(self, timeout = None):
-        if timeout:
+        if timeout != None:
             r = lo_server_recv_noblock(self._serv, timeout)
             return r and True or False
         else:
@@ -384,6 +417,7 @@ cdef class Message:
 
     def add(self, *args):
         cdef char *cs
+        cdef uint8_t midi[4]
 
         # multiple arguments
         if len(args) > 1:
@@ -393,7 +427,7 @@ cdef class Message:
 
         # single argument...
         arg = args[0]
-        if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
+        if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
             if (arg[0] == 'i'):
                 lo_message_add_int32(self._msg, arg[1])
             elif (arg[0] == 'h'):
@@ -407,6 +441,21 @@ cdef class Message:
             elif (arg[0] == 's'):
                 s = str(arg[1]); cs = s
                 lo_message_add_string(self._msg, cs)
+            elif (arg[0] == 'S'):
+                s = str(arg[1]); cs = s
+                lo_message_add_symbol(self._msg, cs)
+            elif (arg[0] == 'T'):
+                lo_message_add_true(self._msg)
+            elif (arg[0] == 'F'):
+                lo_message_add_false(self._msg)
+            elif (arg[0] == 'N'):
+                lo_message_add_nil(self._msg)
+            elif (arg[0] == 'I'):
+                lo_message_add_infinitum(self._msg)
+            elif (arg[0] == 'm'):
+                for n from 0 <= n < 4:
+                    midi[n] = arg[1][n]
+                lo_message_add_midi(self._msg, midi)
             elif (arg[0] == 'b'):
                 b = _Blob(arg[1])
                 # make sure the blob is not deleted as long as this message exists
@@ -415,6 +464,11 @@ cdef class Message:
             else:
                 raise TypeError("unknown OSC data type '" + str(arg[0]) + "'")
 
+        # bool is a subclass of int, so check those first
+        elif arg == True:
+            self.add(('T',))
+        elif arg == False:
+            self.add(('F',))
         elif isinstance(arg, int):
             self.add(('i', arg))
         elif isinstance(arg, long):
@@ -423,6 +477,10 @@ cdef class Message:
             self.add(('f', arg))
         elif isinstance(arg, str):
             self.add(('s', arg))
+        elif arg == None:
+            self.add(('N',))
+        elif arg == float('inf'):
+            self.add(('I',))
         else:
             try:    iter(arg)
             except: raise TypeError("unsupported message argument type")
@@ -430,20 +488,37 @@ cdef class Message:
 
 
 ################################################################################################
+#  Bundle
+################################################################################################
+
+#cdef class Bundle:
+#    cdef lo_bundle _bundle
+#    cdef object _keep_refs
+
+#    def __init__(self, tt, *msgs):
+#        self._keep_refs = []
+#        self._bundle = lo_bundle_new(<lo_timetag>tt)
+#        self.add(*msgs)
+
+#    def __dealloc__(self):
+#        lo_bundle_free(self._bundle)
+
+#    def add(self, *msgs):
+#        if isinstance(msgs[0], Message):
+#            # message objects
+#            for m in msgs:
+#                self._msgs.append(m)
+#        else:
+#            # arguments of single message
+#            self._msgs.append(Message(*msgs))
+##            lo_bundle_add_message(b, (<Message>m)._path, (<Message>m)._msg)
+
+
+################################################################################################
 #  global functions
 ################################################################################################
 
-def send(target, msg, *data):
-    if isinstance(target, Address):
-        a = target
-    elif isinstance(target, tuple):
-        a = Address(target[0], target[1])
-    else:
-        a = Address(target)
-
-    if isinstance(msg, Message):
-        m = msg
-    else:
-        m = Message(msg, *data)
-
+def send(target, *msg):
+    a = _make_address(target)
+    m = _make_message(*msg)
     lo_send_message((<Address>a)._addr, (<Message>m)._path, (<Message>m)._msg)
