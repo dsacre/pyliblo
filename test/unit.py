@@ -73,6 +73,14 @@ class ServerTestCase(ServerTestCaseBase):
         assert self.cb.args[5] == 'x'
         assert self.cb.args[6] == [12, 34, 56]
 
+    def testSendBundle(self):
+        self.server.add_method('/foo', 'i', self.callback)
+        self.server.add_method('/bar', 's', self.callback)
+        self.server.send(1234, liblo.Bundle(
+            liblo.Message('/foo', 123),
+            liblo.Message('bar', "blubb"))
+        )
+
     def testSendInvalid(self):
         try:
             self.server.send(1234, '/blubb', ('x', 'y'))

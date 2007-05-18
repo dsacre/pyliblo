@@ -114,29 +114,49 @@ cdef extern from 'lo/lo.h':
 import inspect
 import math
 
-
 def _is_int(s):
     try: int(s)
     except ValueError: return False
     else: return True
 
 
+cdef class _ServerBase
 cdef class Address
 cdef class Message
+cdef class Bundle
 
-def _make_address(addr):
-    if isinstance(addr, Address):
-        return addr
-    elif isinstance(addr, tuple):
-        return Address(addr[0], addr[1])
-    else:
-        return Address(addr)
 
-def _make_message(*msg):
-    if isinstance(msg[0], Message):
-        return msg[0]
+################################################################################################
+#  send
+################################################################################################
+
+def _send(target, src, *msg):
+    if isinstance(target, Address):
+        addr = target
+    elif isinstance(target, tuple):
+        addr = Address(target[0], target[1])
     else:
-        return Message(*msg)
+        addr = Address(target)
+
+    # arguments aren't already messages or bundles, try to make a single message out of all arguments
+    if not isinstance(msg[0], (Message, Bundle)):
+        msg = [Message(*msg)]
+
+    for m in msg:
+        if isinstance(m, Message):
+            if src:
+                lo_send_message_from((<Address>addr)._addr, (<_ServerBase>src)._serv, (<Message>m)._path, (<Message>m)._msg)
+            else:
+                lo_send_message((<Address>addr)._addr, (<Message>m)._path, (<Message>m)._msg)
+        else:
+            if src:
+                lo_send_bundle_from((<Address>addr)._addr, (<_ServerBase>src)._serv, (<Bundle>m)._bundle)
+            else:
+                lo_send_bundle((<Address>addr)._addr, (<Bundle>m)._bundle)
+
+
+def send(target, *msg):
+    _send(target, None, *msg)
 
 
 ################################################################################################
@@ -258,9 +278,7 @@ cdef class _ServerBase:
         lo_server_add_method(self._serv, p, t, self._cb_func, <void*>cb)
 
     def send(self, target, *msg):
-        a = _make_address(target)
-        m = _make_message(*msg)
-        lo_send_message_from((<Address>a)._addr, self._serv, (<Message>m)._path, (<Message>m)._msg)
+        _send(target, self, *msg)
 
 
 cdef class Server(_ServerBase):
@@ -526,18 +544,11 @@ cdef class Bundle:
         if isinstance(msgs[0], Message):
             # arguments are message objects
             for m in msgs:
+                self._keep_refs.append(m)
                 lo_bundle_add_message(self._bundle, (<Message>m)._path, (<Message>m)._msg)
         else:
             # arguments are one single message
             m = Message(*msgs)
+            self._keep_refs.append(m)
             lo_bundle_add_message(self._bundle, (<Message>m)._path, (<Message>m)._msg)
 
-
-################################################################################################
-#  global functions
-################################################################################################
-
-def send(target, *msg):
-    a = _make_address(target)
-    m = _make_message(*msg)
-    lo_send_message((<Address>a)._addr, (<Message>m)._path, (<Message>m)._msg)
