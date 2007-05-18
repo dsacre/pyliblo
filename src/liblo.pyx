@@ -131,6 +131,8 @@ cdef class Bundle
 ################################################################################################
 
 def _send(target, src, *msg):
+    cdef lo_server serv
+
     if isinstance(target, Address):
         addr = target
     elif isinstance(target, tuple):
@@ -142,17 +144,16 @@ def _send(target, src, *msg):
     if not isinstance(msg[0], (Message, Bundle)):
         msg = [Message(*msg)]
 
+    if src:
+        serv = (<_ServerBase>src)._serv
+    else:
+        serv = NULL
+
     for m in msg:
         if isinstance(m, Message):
-            if src:
-                lo_send_message_from((<Address>addr)._addr, (<_ServerBase>src)._serv, (<Message>m)._path, (<Message>m)._msg)
-            else:
-                lo_send_message((<Address>addr)._addr, (<Message>m)._path, (<Message>m)._msg)
+            lo_send_message_from((<Address>addr)._addr, serv, (<Message>m)._path, (<Message>m)._msg)
         else:
-            if src:
-                lo_send_bundle_from((<Address>addr)._addr, (<_ServerBase>src)._serv, (<Bundle>m)._bundle)
-            else:
-                lo_send_bundle((<Address>addr)._addr, (<Bundle>m)._bundle)
+            lo_send_bundle_from((<Address>addr)._addr, serv, (<Bundle>m)._bundle)
 
 
 def send(target, *msg):
