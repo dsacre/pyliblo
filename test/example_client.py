@@ -26,3 +26,6 @@ liblo.send(target, msg)
 blob = [4, 8, 15, 16, 23, 42]
 liblo.send(target, "/foo/blob", blob)
 
+# wrap a message in a bundle, to be dispatched after 2 seconds
+bundle = liblo.Bundle(liblo.time() + 2.0, liblo.Message("/blubb", 123))
+liblo.send(target, bundle)

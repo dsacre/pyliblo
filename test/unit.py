@@ -5,6 +5,9 @@ import re
 import time
 import liblo
 
+def approx(a, b, e = 0.0002):
+    return abs(a - b) < e
+
 
 class ServerTestCaseBase(unittest.TestCase):
     def setUp(self):
@@ -39,9 +42,6 @@ class ServerTestCase(ServerTestCaseBase):
         r = re.compile("osc\.udp://.*:1234/")
         return r.match(host) != None
 
-    def approx(self, a, b, e = 0.0002):
-        return abs(a - b) < e
-
     def testPort(self):
         assert self.server.get_port() == 1234
 
@@ -72,8 +72,8 @@ class ServerTestCase(ServerTestCaseBase):
         assert len(self.cb.args) == len(self.cb.types)
         assert self.cb.args[0] == 123
         assert self.cb.args[1] == 2**42
-        assert self.approx(self.cb.args[2], 123.456)
-        assert self.approx(self.cb.args[3], 666.666)
+        assert approx(self.cb.args[2], 123.456)
+        assert approx(self.cb.args[3], 666.666)
         assert self.cb.args[4] == "hello"
         assert self.cb.args[5] == 'x'
         assert self.cb.args[6] == [12, 34, 56]
@@ -83,7 +83,7 @@ class ServerTestCase(ServerTestCaseBase):
         self.server.send(1234, '/blubb', ('t', 666666.666), ('m', (1, 2, 3, 4)), ('S', 'foo'), True, ('F',), None, ('I',))
         assert self.server.recv() == True
         assert self.cb.types == 'tmSTFNI'
-        assert self.approx(self.cb.args[0], 666666.666)
+        assert approx(self.cb.args[0], 666666.666)
         assert self.cb.args[1] == (1, 2, 3, 4)
         assert self.cb.args[2] == 'foo'
         assert self.cb.args[3] == True
@@ -96,8 +96,8 @@ class ServerTestCase(ServerTestCaseBase):
         self.server.add_method('/bar', 's', self.callback_dict)
         self.server.send(1234, liblo.Bundle(
             liblo.Message('/foo', 123),
-            liblo.Message('/bar', "blubb"))
-        )
+            liblo.Message('/bar', "blubb")
+        ))
         assert self.server.recv(100) == True
         assert self.cb['/foo'].args[0] == 123
         assert self.cb['/bar'].args[0] == "blubb"
@@ -112,7 +112,7 @@ class ServerTestCase(ServerTestCaseBase):
         while not self.cb:
             self.server.recv(1)
         t2 = time.time()
-        assert self.approx(t2 - t1, d, 0.01)
+        assert approx(t2 - t1, d, 0.01)
 
     def testSendInvalid(self):
         try:

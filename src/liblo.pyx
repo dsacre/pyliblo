@@ -56,6 +56,10 @@ cdef extern from 'lo/lo.h':
     ctypedef void(*lo_err_handler)(int num, char *msg, char *where)
     ctypedef int(*lo_method_handler)(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *user_data)
 
+    # send
+    int lo_send_message_from(lo_address targ, lo_server serv, char *path, lo_message msg)
+    int lo_send_bundle_from(lo_address targ, lo_server serv, lo_bundle b)
+
     # server
     lo_server lo_server_new(char *port, lo_err_handler err_h)
     void lo_server_free(lo_server s)
@@ -111,13 +115,8 @@ cdef extern from 'lo/lo.h':
     # timetag
     void lo_timetag_now(lo_timetag *t)
 
-    # send
-    int lo_send_message_from(lo_address targ, lo_server serv, char *path, lo_message msg)
-    int lo_send_bundle_from(lo_address targ, lo_server serv, lo_bundle b)
-
 
 import inspect as _inspect
-
 
 def _is_int(s):
     try: int(s)
@@ -132,10 +131,10 @@ cdef class Bundle
 
 
 ################################################################################################
-#  timetags
+#  timetag
 ################################################################################################
 
-cdef lo_timetag _float_to_timetag(double f):
+cdef lo_timetag _double_to_timetag(double f):
     cdef lo_timetag tt
     cdef double intr, frac
     frac = modf(f, &intr)
@@ -143,13 +142,13 @@ cdef lo_timetag _float_to_timetag(double f):
     tt.frac = <uint32_t>(frac * 4294967296.0)
     return tt
 
-cdef double _timetag_to_float(lo_timetag tt):
+cdef double _timetag_to_double(lo_timetag tt):
     return <double>tt.sec + (<double>(tt.frac) / 4294967296.0)
 
 def time():
     cdef lo_timetag tt
     lo_timetag_now(&tt)
-    return _timetag_to_float(tt)
+    return _timetag_to_double(tt)
 
 
 ################################################################################################
@@ -166,8 +165,8 @@ def _send(target, src, *msg):
     else:
         addr = Address(target)
 
-    # arguments aren't already messages or bundles, try to make a single message out of all arguments
     if not isinstance(msg[0], (Message, Bundle)):
+        # arguments aren't already messages or bundles, try to make a single message out of all arguments
         msg = [Message(*msg)]
 
     if src:
@@ -226,7 +225,7 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         elif t == 'N': v = None
         elif t == 'I': v = float('inf')
         elif t == 'm': v = (argv[i].m[0], argv[i].m[1], argv[i].m[2], argv[i].m[3])
-        elif t == 't': v = _timetag_to_float(argv[i].t)
+        elif t == 't': v = _timetag_to_double(argv[i].t)
         elif t == 'b':
             # convert binary data to python list
             v = []
@@ -502,7 +501,7 @@ cdef class Message:
                     midi[n] = arg[1][n]
                 lo_message_add_midi(self._msg, midi)
             elif arg[0] == 't':
-                lo_message_add_timetag(self._msg, _float_to_timetag(arg[1]))
+                lo_message_add_timetag(self._msg, _double_to_timetag(arg[1]))
             elif arg[0] == 'b':
                 b = _Blob(arg[1])
                 # make sure the blob is not deleted as long as this message exists
@@ -547,18 +546,18 @@ cdef class Bundle:
         tt.sec, tt.frac = 0, 0
         self._keep_refs = []
 
-        if isinstance(msgs[0], Message):
-            # no timestamp
+        if len(msgs) == 0 or isinstance(msgs[0], Message):
+            # no timetag
             pass
         else:
             t = msgs[0]
             if isinstance(t, (float, int, long)):
-                tt = _float_to_timetag(t)
+                tt = _double_to_timetag(t)
             elif isinstance(t, tuple) and len(t) == 2:
                 tt.sec, tt.frac = t
             else:
-                raise TypeError("invalid timestamp")
-            # first argument was timestamp, so continue with second
+                raise TypeError("invalid timetag")
+            # first argument was timetag, so continue with second
             msgs = msgs[1:]
 
         self._bundle = lo_bundle_new(tt)
