@@ -1,8 +1,8 @@
 README
 COPYING
 setup.py
-liblo/liblo.pyx
-liblo/liblo.c
+src/liblo.pyx
+src/liblo.c
 scripts/dump_osc.py
 scripts/send_osc.py
 doc/API.html
