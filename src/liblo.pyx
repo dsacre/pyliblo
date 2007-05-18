@@ -20,6 +20,9 @@ cdef extern from 'stdlib.h':
     void *malloc(size_t size)
     void free(void *ptr)
 
+cdef extern from 'math.h':
+    double modf(double x, double *iptr)
+
 cdef extern from "Python.h":
     void PyEval_InitThreads()
     ctypedef void *PyGILState_STATE
@@ -87,11 +90,12 @@ cdef extern from 'lo/lo.h':
     void lo_message_add_char(lo_message m, char a)
     void lo_message_add_string(lo_message m, char *a)
     void lo_message_add_symbol(lo_message m, char *a)
-    void lo_message_add_true(lo_message)
-    void lo_message_add_false(lo_message)
-    void lo_message_add_nil(lo_message)
-    void lo_message_add_infinitum(lo_message)
-    void lo_message_add_midi(lo_message, uint8_t a[4])
+    void lo_message_add_true(lo_message m)
+    void lo_message_add_false(lo_message m)
+    void lo_message_add_nil(lo_message m)
+    void lo_message_add_infinitum(lo_message m)
+    void lo_message_add_midi(lo_message m, uint8_t a[4])
+    void lo_message_add_timetag(lo_message m, lo_timetag a)
     void lo_message_add_blob(lo_message m, lo_blob a)
     lo_address lo_message_get_source(lo_message m)
 
@@ -104,15 +108,16 @@ cdef extern from 'lo/lo.h':
     void lo_bundle_free(lo_bundle b)
     void lo_bundle_add_message(lo_bundle b, char *path, lo_message m)
 
-    # "global" functions
-    int lo_send_message(lo_address targ, char *path, lo_message msg)
+    # timetag
+    void lo_timetag_now(lo_timetag *t)
+
+    # send
     int lo_send_message_from(lo_address targ, lo_server serv, char *path, lo_message msg)
-    int lo_send_bundle(lo_address targ, lo_bundle b)
     int lo_send_bundle_from(lo_address targ, lo_server serv, lo_bundle b)
 
 
-import inspect
-import math
+import inspect as _inspect
+
 
 def _is_int(s):
     try: int(s)
@@ -124,6 +129,27 @@ cdef class _ServerBase
 cdef class Address
 cdef class Message
 cdef class Bundle
+
+
+################################################################################################
+#  timetags
+################################################################################################
+
+cdef lo_timetag _float_to_timetag(double f):
+    cdef lo_timetag tt
+    cdef double intr, frac
+    frac = modf(f, &intr)
+    tt.sec = <uint32_t>intr
+    tt.frac = <uint32_t>(frac * 4294967296.0)
+    return tt
+
+cdef double _timetag_to_float(lo_timetag tt):
+    return <double>tt.sec + (<double>(tt.frac) / 4294967296.0)
+
+def time():
+    cdef lo_timetag tt
+    lo_timetag_now(&tt)
+    return _timetag_to_float(tt)
 
 
 ################################################################################################
@@ -200,7 +226,7 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         elif t == 'N': v = None
         elif t == 'I': v = float('inf')
         elif t == 'm': v = (argv[i].m[0], argv[i].m[1], argv[i].m[2], argv[i].m[3])
-### TODO: timetag
+        elif t == 't': v = _timetag_to_float(argv[i].t)
         elif t == 'b':
             # convert binary data to python list
             v = []
@@ -219,8 +245,8 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
     func_args = (path, args, types, src, cb.data)
 
     # number of arguments to call the function with
-    n = len(inspect.getargspec(cb.func)[0])
-    if inspect.ismethod(cb.func): n = n - 1  # self doesn't count
+    n = len(_inspect.getargspec(cb.func)[0])
+    if _inspect.ismethod(cb.func): n = n - 1  # self doesn't count
 
     cb.func(*func_args[0:n])
     return 0
@@ -228,7 +254,6 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
 
 cdef int _callback_threaded(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
     cdef PyGILState_STATE gil
-    cdef unsigned char u
 
     # acquire the global interpreter lock
     gil = PyGILState_Ensure()
@@ -403,7 +428,7 @@ cdef class _Blob:
         # arr can by any sequence type
         cdef unsigned char *p
         size = len(arr)
-        if (size < 1):
+        if size < 1:
             raise ValueError("blob is empty")
         # copy each element of arr to c array
         p = <unsigned char*>malloc(size)
@@ -448,35 +473,37 @@ cdef class Message:
         # single argument...
         arg = args[0]
         if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
-            if (arg[0] == 'i'):
+            if arg[0] == 'i':
                 lo_message_add_int32(self._msg, arg[1])
-            elif (arg[0] == 'h'):
+            elif arg[0] == 'h':
                 lo_message_add_int64(self._msg, arg[1])
-            elif (arg[0] == 'f'):
+            elif arg[0] == 'f':
                 lo_message_add_float(self._msg, arg[1])
-            elif (arg[0] == 'd'):
+            elif arg[0] == 'd':
                 lo_message_add_double(self._msg, arg[1])
-            elif (arg[0] == 'c'):
+            elif arg[0] == 'c':
                 lo_message_add_char(self._msg, ord(arg[1]))
-            elif (arg[0] == 's'):
+            elif arg[0] == 's':
                 s = str(arg[1]); cs = s
                 lo_message_add_string(self._msg, cs)
-            elif (arg[0] == 'S'):
+            elif arg[0] == 'S':
                 s = str(arg[1]); cs = s
                 lo_message_add_symbol(self._msg, cs)
-            elif (arg[0] == 'T'):
+            elif arg[0] == 'T':
                 lo_message_add_true(self._msg)
-            elif (arg[0] == 'F'):
+            elif arg[0] == 'F':
                 lo_message_add_false(self._msg)
-            elif (arg[0] == 'N'):
+            elif arg[0] == 'N':
                 lo_message_add_nil(self._msg)
-            elif (arg[0] == 'I'):
+            elif arg[0] == 'I':
                 lo_message_add_infinitum(self._msg)
-            elif (arg[0] == 'm'):
+            elif arg[0] == 'm':
                 for n from 0 <= n < 4:
                     midi[n] = arg[1][n]
                 lo_message_add_midi(self._msg, midi)
-            elif (arg[0] == 'b'):
+            elif arg[0] == 't':
+                lo_message_add_timetag(self._msg, _float_to_timetag(arg[1]))
+            elif arg[0] == 'b':
                 b = _Blob(arg[1])
                 # make sure the blob is not deleted as long as this message exists
                 self._keep_refs.append(b)
@@ -526,8 +553,7 @@ cdef class Bundle:
         else:
             t = msgs[0]
             if isinstance(t, (float, int, long)):
-                frac, tt.sec = math.modf(t)
-                tt.frac = frac * 4294967296L
+                tt = _float_to_timetag(t)
             elif isinstance(t, tuple) and len(t) == 2:
                 tt.sec, tt.frac = t
             else:
@@ -536,7 +562,8 @@ cdef class Bundle:
             msgs = msgs[1:]
 
         self._bundle = lo_bundle_new(tt)
-        self.add(*msgs)
+        if len(msgs):
+            self.add(*msgs)
 
     def __dealloc__(self):
         lo_bundle_free(self._bundle)
