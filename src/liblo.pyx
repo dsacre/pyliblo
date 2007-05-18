@@ -112,6 +112,7 @@ cdef extern from 'lo/lo.h':
 
 
 import inspect
+import math
 
 
 def _is_int(s):
@@ -491,27 +492,45 @@ cdef class Message:
 #  Bundle
 ################################################################################################
 
-#cdef class Bundle:
-#    cdef lo_bundle _bundle
-#    cdef object _keep_refs
+cdef class Bundle:
+    cdef lo_bundle _bundle
+    cdef object _keep_refs
 
-#    def __init__(self, tt, *msgs):
-#        self._keep_refs = []
-#        self._bundle = lo_bundle_new(<lo_timetag>tt)
-#        self.add(*msgs)
+    def __init__(self, *msgs):
+        cdef lo_timetag tt
+        tt.sec, tt.frac = 0, 0
+        self._keep_refs = []
 
-#    def __dealloc__(self):
-#        lo_bundle_free(self._bundle)
+        if isinstance(msgs[0], Message):
+            # no timestamp
+            pass
+        else:
+            t = msgs[0]
+            if isinstance(t, (float, int, long)):
+                frac, tt.sec = math.modf(t)
+                tt.frac = frac * 4294967296L
+            elif isinstance(t, tuple) and len(t) == 2:
+                tt.sec, tt.frac = t
+            else:
+                raise TypeError("invalid timestamp")
+            # first argument was timestamp, so continue with second
+            msgs = msgs[1:]
 
-#    def add(self, *msgs):
-#        if isinstance(msgs[0], Message):
-#            # message objects
-#            for m in msgs:
-#                self._msgs.append(m)
-#        else:
-#            # arguments of single message
-#            self._msgs.append(Message(*msgs))
-##            lo_bundle_add_message(b, (<Message>m)._path, (<Message>m)._msg)
+        self._bundle = lo_bundle_new(tt)
+        self.add(*msgs)
+
+    def __dealloc__(self):
+        lo_bundle_free(self._bundle)
+
+    def add(self, *msgs):
+        if isinstance(msgs[0], Message):
+            # arguments are message objects
+            for m in msgs:
+                lo_bundle_add_message(self._bundle, (<Message>m)._path, (<Message>m)._msg)
+        else:
+            # arguments are one single message
+            m = Message(*msgs)
+            lo_bundle_add_message(self._bundle, (<Message>m)._path, (<Message>m)._msg)
 
 
 ################################################################################################
