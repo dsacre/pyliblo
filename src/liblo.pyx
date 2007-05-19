@@ -166,7 +166,8 @@ def _send(target, src, *msg):
         addr = Address(target)
 
     if not isinstance(msg[0], (Message, Bundle)):
-        # arguments aren't already messages or bundles, try to make a single message out of all arguments
+        # arguments aren't already messages or bundles,
+        # try to make a single message out of all arguments
         msg = [Message(*msg)]
 
     if src:
@@ -270,6 +271,25 @@ cdef void _err_handler(int num, char *msg, char *where):
     if where: __exception.where = where
 
 
+# decorator to register callbacks
+
+class make_method:
+    # counter to keep track of the order in which the callback functions where defined
+    _counter = 0
+
+    def __init__(self, path, types, user_data = None):
+        self.spec = (make_method._counter, path, types, user_data)
+        make_method._counter = make_method._counter + 1
+
+    def __call__(self, f):
+        # we can't access the Server object here, because at the time the decorator is run it
+        # doesn't even exist yet. so we store the path/typespec in the function object instead...
+        if not hasattr(f, '_method_spec'):
+            f._method_spec = []
+        f._method_spec.append(self.spec)
+        return f
+
+
 # common base class for both Server and ServerThread
 
 cdef class _ServerBase:
@@ -279,6 +299,17 @@ cdef class _ServerBase:
 
     def __init__(self):
         self._keep_refs = []
+
+        # find and register methods that were defined using decorators
+        methods = []
+        for m in _inspect.getmembers(self):
+            if hasattr(m[1], '_method_spec'):
+                for s in m[1]._method_spec:
+                    methods.append((s, m[1]))
+        # sort by counter (first element in each tuple)
+        methods.sort()
+        for e in methods:
+            self.add_method(e[0][1], e[0][2], e[1], e[0][3])
 
     def get_url(self):
         return lo_server_get_url(self._serv)
@@ -310,7 +341,6 @@ cdef class Server(_ServerBase):
 
     def __init__(self, port = None):
         cdef char *cs
-        _ServerBase.__init__(self)
 
         p = str(port); cs = p
         if port == None:
@@ -323,6 +353,7 @@ cdef class Server(_ServerBase):
             raise __exception
 
         self._cb_func = _callback
+        _ServerBase.__init__(self)
 
     def __dealloc__(self):
         lo_server_free(self._serv)
@@ -341,7 +372,6 @@ cdef class ServerThread(_ServerBase):
 
     def __init__(self, port = None):
         cdef char *cs
-        _ServerBase.__init__(self)
 
         p = str(port); cs = p
         if port == None:
@@ -357,6 +387,7 @@ cdef class ServerThread(_ServerBase):
         self._serv = lo_server_thread_get_server(self._thread)
 
         self._cb_func = _callback_threaded
+        _ServerBase.__init__(self)
 
     def __dealloc__(self):
         lo_server_thread_free(self._thread)

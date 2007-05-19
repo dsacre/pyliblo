@@ -9,8 +9,8 @@ except liblo.ServerError, err:
     print str(err)
     sys.exit()
 
-def foo_bar_callback(path, args):
-    print "received message '%s' with arguments '%d' and '%f'" % (path, args[0], args[1])
+def foo_bar_callback(path, (i, f)):
+    print "received message '%s' with arguments '%d' and '%f'" % (path, i, f)
 
 def foo_baz_callback(path, args, types, src, data):
     print "received message '%s'" % path
