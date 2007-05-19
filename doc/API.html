@@ -44,12 +44,47 @@ the epoch (January 1, 1900).
 
 <h2>class Server</h2>
 
-<h3>Server([port])</h3>
+<h3>Server([port[, reg_methods]])</h3>
 <p>
 Creates a new <b>Server</b> object, which can receive OSC messages.<br>
 port may be a decimal port number or a UNIX socket path.
 If omitted, an arbitrary free UDP port will be used.<br>
+Pass False for reg_methods if you don't want the init function to automatically
+register callback functions defined with the make_method() decorator.<br>
 Exceptions: <b>ServerError</b>
+</p>
+
+<h3>add_method(path, typespec, callback_func[, user_data])</h3>
+<p>
+Registers a callback function for OSC messages with matching path and argument types.<br>
+For both path and typespec, None may be used as a wildcard.<br>
+The optional user_data will be passed on to the callback function.
+callback_func may be a global function or a class method, pyliblo will know what to do either way.
+</p>
+
+<h3>make_method(path, typespec[, user_data])</h3>
+<p>
+Decorator function that basically serves the same purpose as add_method().
+The function being decorated must be a method of a class derived from Server.
+Decorators require Python 2.4 or later.<br>
+Note that make_method() is defined at module scope, and not a member of class Server.
+</p>
+
+<h3>register_methods()</h3>
+<p>
+Calls add_method() for all methods decorated with make_method().
+This is usually done automatically by the Server's init function.
+</p>
+
+<h3>my_callback(path, args[, types[, src[, user_data]]])<br>
+my_callback(self, path, args[, types[, src[, user_data]]])</h3>
+<p>
+User-defined callback function, to be registered using add_method() or make_method();
+called when a matching OSC message is received.<br>
+args will be a list of message arguments, using appropriate built-in Python data types.
+types is a string with the typespec of the message.
+src is an <b>Address</b> object, containing the address the message came from.
+types, src and user_data may be omitted if not needed.
 </p>
 
 <h3>recv([timeout])</h3>
@@ -60,27 +95,14 @@ timeout may be 0, in which case recv() returns immediately.
 Returns True if a message was received, False otherwise.
 </p>
 
-<h2>class ServerThread</h2>
-
-<h3>ServerThread([port])</h3>
+<h3>send(target, message)<br>
+send(target, bundle)<br>
+send(target, path[, arg, ...])</h3>
 <p>
-Creates a new <b>ServerThread</b> object.<br>
-Unlike <b>Server</b>, <b>ServerThread</b> uses its own thread which runs in the background to dispatch messages.
-Note that callback methods will not be run in the main Python thread!<br>
-Exceptions: <b>ServerError</b>
+Sends a message or bundle from this server to the the given target.<br>
+target may be an <b>Address</b> object, a port number, a (hostname, port) tuple, or a URL.<br>
+Exceptions: <b>AddressError</b>
 </p>
-
-<h3>start()</h3>
-<p>
-Starts the server thread, liblo will now start to dispatch any messages it receives.
-</p>
-
-<h3>stop()</h3>
-<p>
-Stops the server thread.
-</p>
-
-<h2>common methods of both Server and ServerThread</h2>
 
 <h3>get_url()</h3>
 <p>
@@ -92,32 +114,22 @@ Returns the server's URL.
 Returns the server's port number.
 </p>
 
-<h3>add_method(path, typespec, callback_func[, user_data])</h3>
+<h2>class ServerThread</h2>
 <p>
-Registers a callback function for OSC messages with matching path and argument types.<br>
-For both path and typespec, None may be used as a wildcard.<br>
-The optional user_data will be passed on to the callback function.
-callback_func may be a global function or a class method, pyliblo will know what to do either way.
+Unlike <b>Server</b>, <b>ServerThread</b> uses its own thread which runs in the background
+to dispatch messages. Note that callback methods will not be run in the main Python thread!<br>
+<b>ServerThread</b> has the same methods as <b>Server</b>, with the exception of recv().
+Instead, it defines these two methods:
 </p>
 
-<h3>my_callback(path, args[, types[, src[, user_data]]])<br>
-my_callback(self, path, args[, types[, src[, user_data]]])</h3>
+<h3>start()</h3>
 <p>
-User-defined callback function, to be registered using add_method();
-called when a matching OSC message is received.<br>
-args will be a list of message arguments, using appropriate built-in Python data types.
-blobs are passed as lists of integers. types is a string with the typespec of the message.<br>
-src is an <b>Address</b> object, containing the address the message came from.
-types, src and user_data may be omitted if not needed.
+Starts the server thread, liblo will now start to dispatch any messages it receives.
 </p>
 
-<h3>send(target, message)<br>
-send(target, bundle)<br>
-send(target, path[, arg, ...])</h3>
+<h3>stop()</h3>
 <p>
-Sends a message or bundle from this server to the the given target.<br>
-target may be an <b>Address</b> object, a port number, a (hostname, port) tuple, or a URL.<br>
-Exceptions: <b>AddressError</b>
+Stops the server thread.
 </p>
 
 <h2>class Address</h2>

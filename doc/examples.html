@@ -71,7 +71,8 @@ except liblo.ServerError, err:
     sys.exit()
 
 def foo_bar_callback(path, args):
-    print "received message '%s' with arguments '%d' and '%f'" % (path, args[0], args[1])
+    i, f = args
+    print "received message '%s' with arguments '%d' and '%f'" % (path, i, f)
 
 def foo_baz_callback(path, args, types, src, data):
     print "received message '%s'" % path
@@ -94,6 +95,39 @@ server.add_method(None, None, fallback)
 # loop and dispatch messages every 100ms
 while True:
     server.recv(100)
+</pre>
+
+<p>
+Example using ServerThread and the make_method decorators:
+</p>
+
+<pre>
+#!/usr/bin/env python
+
+from liblo import *
+import sys
+
+class MyServer(ServerThread):
+    def __init__(self):
+        ServerThread.__init__(self, 1234)
+
+    @make_method('/foo', 'ifs')
+    def foo_callback(self, path, args):
+        i, f, s = args
+        print "received message '%s' with arguments: %d, %f, %s" % (path, i, f, s)
+
+    @make_method(None, None)
+    def fallback(self, path, args):
+        print "received unknown message '%s'" % path
+
+try:
+    server = MyServer()
+except ServerError, err:
+    print str(err)
+    sys.exit()
+
+server.start()
+raw_input("press any key to quit...\n")
 </pre>
 
 </body>

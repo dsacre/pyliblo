@@ -4,7 +4,7 @@
 from distutils.core import setup, Extension
 from distutils.command.build_scripts import build_scripts
 from distutils import util
-import os, errno
+import os
 
 try:
     from Pyrex.Distutils import build_ext
@@ -43,7 +43,7 @@ kwargs['cmdclass']['build_scripts'] = build_scripts_rename
 
 setup (
     name = 'pyliblo',
-    version = '0.5.1',
+    version = '0.6',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',

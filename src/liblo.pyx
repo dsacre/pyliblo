@@ -297,9 +297,12 @@ cdef class _ServerBase:
     cdef lo_method_handler _cb_func
     cdef object _keep_refs
 
-    def __init__(self):
+    def __init__(self, reg_methods):
         self._keep_refs = []
+        if reg_methods:
+            self.register_methods()
 
+    def register_methods(self):
         # find and register methods that were defined using decorators
         methods = []
         for m in _inspect.getmembers(self):
@@ -339,7 +342,7 @@ cdef class _ServerBase:
 
 cdef class Server(_ServerBase):
 
-    def __init__(self, port = None):
+    def __init__(self, port = None, reg_methods = True):
         cdef char *cs
 
         p = str(port); cs = p
@@ -353,7 +356,7 @@ cdef class Server(_ServerBase):
             raise __exception
 
         self._cb_func = _callback
-        _ServerBase.__init__(self)
+        _ServerBase.__init__(self, reg_methods)
 
     def __dealloc__(self):
         lo_server_free(self._serv)
@@ -370,7 +373,7 @@ cdef class Server(_ServerBase):
 cdef class ServerThread(_ServerBase):
     cdef lo_server_thread _thread
 
-    def __init__(self, port = None):
+    def __init__(self, port = None, reg_methods = True):
         cdef char *cs
 
         p = str(port); cs = p
@@ -387,7 +390,7 @@ cdef class ServerThread(_ServerBase):
         self._serv = lo_server_thread_get_server(self._thread)
 
         self._cb_func = _callback_threaded
-        _ServerBase.__init__(self)
+        _ServerBase.__init__(self, reg_methods)
 
     def __dealloc__(self):
         lo_server_thread_free(self._thread)
