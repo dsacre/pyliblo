@@ -31,6 +31,10 @@ Also take a look at the send_osc and dump_osc scripts, for tiny but functional e
 <h2>Example Client</h2>
 
 <pre>
+#!/usr/bin/env python
+
+import liblo, sys
+
 # send all messages to port 1234 on the local machine
 try:
     target = liblo.Address(1234)
@@ -63,6 +67,10 @@ liblo.send(target, bundle)
 <h2>Example Server</h2>
 
 <pre>
+#!/usr/bin/env python
+
+import liblo, sys
+
 # create server, listening on port 1234
 try:
     server = liblo.Server(1234)
@@ -97,7 +105,7 @@ while True:
     server.recv(100)
 </pre>
 
-<h2>Example ServerThread, using the make_method() decorator</h2>
+<h2>Example ServerThread, using the @make_method decorator</h2>
 
 <pre>
 #!/usr/bin/env python
