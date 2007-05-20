@@ -345,9 +345,9 @@ cdef class _ServerBase:
         elif typespec == None:        t = NULL
         else: raise TypeError("typespec must be a string or None")
 
-        # use a weak reference if func is a method of self. otherwise we'd create a
+        # use a weak reference if func is a method of self. otherwise we'd be creating a
         # circular reference between self, having func in _keep_refs, and the bound
-        # method func, implicitly keeping a reference to its class instance, thus
+        # method func, which implicitly keeps a reference to its class instance, thus
         # causing the server never to be deleted.
         if _inspect.ismethod(func) and func.im_self == self:
             func = _weakref_method(func)
