@@ -117,6 +117,15 @@ cdef extern from 'lo/lo.h':
 
 
 import inspect as _inspect
+import weakref as _weakref
+import new as _new
+
+class _weakref_method:
+    def __init__(self, f):
+        self.f = f.im_func
+        self.c = _weakref.ref(f.im_self)
+    def __call__(self, *args):
+        return _new.instancemethod(self.f, self.c(), self.c().__class__)
 
 def _is_int(s):
     try: int(s)
@@ -242,13 +251,17 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
     src = Address(lo_address_get_url(lo_message_get_source(msg)))
 
     cb = <object>cb_data
+    if isinstance(cb.func, _weakref_method):
+        func = cb.func()
+    else:
+        func = cb.func
     func_args = (path, args, types, src, cb.data)
 
     # number of arguments to call the function with
-    n = len(_inspect.getargspec(cb.func)[0])
-    if _inspect.ismethod(cb.func): n = n - 1  # self doesn't count
+    n = len(_inspect.getargspec(func)[0])
+    if _inspect.ismethod(func): n = n - 1  # self doesn't count
 
-    cb.func(*func_args[0:n])
+    func(*func_args[0:n])
     return 0
 
 
@@ -331,6 +344,13 @@ cdef class _ServerBase:
         if isinstance(typespec, str): t = typespec
         elif typespec == None:        t = NULL
         else: raise TypeError("typespec must be a string or None")
+
+        # use a weak reference if func is a method of self. otherwise we'd create a
+        # circular reference between self, having func in _keep_refs, and the bound
+        # method func, implicitly keeping a reference to its class instance, thus
+        # causing the server never to be deleted.
+        if _inspect.ismethod(func) and func.im_self == self:
+            func = _weakref_method(func)
 
         cb = _CallbackData(func, user_data)
         self._keep_refs.append(cb)

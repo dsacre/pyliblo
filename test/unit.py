@@ -9,25 +9,26 @@ def approx(a, b, e = 0.0002):
     return abs(a - b) < e
 
 
+class Arguments:
+    def __init__(self, path, args, types, src, data):
+        self.path = path
+        self.args = args
+        self.types = types
+        self.src = src
+        self.data = data
+
+
 class ServerTestCaseBase(unittest.TestCase):
     def setUp(self):
         self.cb = None
 
-    class Arguments:
-        def __init__(self, path, args, types, src, data):
-            self.path = path
-            self.args = args
-            self.types = types
-            self.src = src
-            self.data = data
-
     def callback(self, path, args, types, src, data):
-        self.cb = self.Arguments(path, args, types, src, data)
+        self.cb = Arguments(path, args, types, src, data)
 
     def callback_dict(self, path, args, types, src, data):
         if self.cb == None:
             self.cb = { }
-        self.cb[path] = self.Arguments(path, args, types, src, data)
+        self.cb[path] = Arguments(path, args, types, src, data)
 
 
 class ServerTestCase(ServerTestCaseBase):
@@ -172,6 +173,28 @@ class ServerThreadTestCase(ServerTestCaseBase):
         time.sleep(0.2)
         self.server.stop()
         assert self.cb.args[0] == 42
+
+
+class DecoratorTestCase(unittest.TestCase):
+    class TestServer(liblo.Server):
+        def __init__(self):
+            liblo.Server.__init__(self, 1234)
+
+        @liblo.make_method('/foo', 'ibm')
+        def foo_cb(self, path, args, types, src, data):
+            self.cb = Arguments(path, args, types, src, data)
+
+    def setUp(self):
+        self.server = self.TestServer()
+
+    def tearDown(self):
+        del self.server
+
+    def testSendReceive(self):
+        liblo.send(1234, '/foo', 42, ('b', [4, 8, 15, 16, 23, 42]), ('m', (6, 6, 6, 0)))
+        assert self.server.recv() == True
+        assert self.server.cb.path == '/foo'
+        assert len(self.server.cb.args) == 3
 
 
 if __name__ == "__main__":
