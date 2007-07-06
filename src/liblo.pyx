@@ -565,9 +565,9 @@ cdef class Message:
                 raise TypeError("unknown OSC data type '" + str(arg[0]) + "'")
 
         # bool is a subclass of int, so check those first
-        elif arg == True:
+        elif arg is True:
             self.add(('T',))
-        elif arg == False:
+        elif arg is False:
             self.add(('F',))
         elif isinstance(arg, int):
             self.add(('i', arg))
