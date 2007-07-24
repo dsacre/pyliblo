@@ -177,8 +177,7 @@ def _send(target, src, *msg):
         addr = Address(target)
 
     if not isinstance(msg[0], (Message, Bundle)):
-        # arguments aren't already messages or bundles,
-        # try to make a single message out of all arguments
+        # treat arguments as one single message
         msg = [Message(*msg)]
 
     if src:
