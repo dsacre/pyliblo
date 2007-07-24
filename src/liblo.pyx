@@ -106,6 +106,8 @@ cdef extern from 'lo/lo.h':
     # blob
     lo_blob lo_blob_new(int32_t size, void *data)
     void lo_blob_free(lo_blob b)
+    void *lo_blob_dataptr(lo_blob b)
+    uint32_t lo_blob_datasize(lo_blob b)
 
     # bundle
     lo_bundle lo_bundle_new(lo_timetag tt)
@@ -218,7 +220,7 @@ class _CallbackData:
 
 
 cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
-    cdef unsigned char u
+    cdef unsigned char *ptr
     args = []
 
     for i from 0 <= i < argc:
@@ -239,10 +241,10 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         elif t == 'b':
             # convert binary data to python list
             v = []
-            size = argv[i].i  # blob size
+            ptr = <unsigned char*>lo_blob_dataptr(argv[i])
+            size = lo_blob_datasize(argv[i])
             for j from 0 <= j < size:
-                u = (&argv[i].s + 4)[j]  # blob data, starts at 5th byte
-                v.append(u)
+                v.append(ptr[j])
         else:
             v = None  # unhandled data type
 
@@ -271,6 +273,7 @@ cdef int _callback_threaded(char *path, char *types, lo_arg **argv, int argc, lo
     # acquire the global interpreter lock
     gil = PyGILState_Ensure()
     try:
+        # call the regular callback function
         _callback(path, types, argv, argc, msg, cb_data)
     finally:
         PyGILState_Release(gil)
@@ -502,89 +505,91 @@ cdef class Message:
     cdef lo_message _msg
     cdef object _keep_refs
 
-    def __init__(self, char *path, *data):
+    def __init__(self, char *path, *args):
         self._keep_refs = []
         self._path = path
         self._msg = lo_message_new()
 
-        for i in data:
-            self.add(i)
+        self.add(*args)
 
     def __dealloc__(self):
         lo_message_free(self._msg)
 
     def add(self, *args):
+        for arg in args:
+            if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
+                if len(arg) == 2: self._add(arg[0], arg[1])
+                else: self._add(arg[0], None)
+            else:
+                self._add_auto(arg)
+
+    def _add(self, t, v):
         cdef char *cs
         cdef uint8_t midi[4]
 
-        # multiple arguments
-        if len(args) > 1:
-            for a in args:
-                self.add(a)
-            return
-
-        # single argument...
-        arg = args[0]
-        if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
-            if arg[0] == 'i':
-                lo_message_add_int32(self._msg, arg[1])
-            elif arg[0] == 'h':
-                lo_message_add_int64(self._msg, arg[1])
-            elif arg[0] == 'f':
-                lo_message_add_float(self._msg, arg[1])
-            elif arg[0] == 'd':
-                lo_message_add_double(self._msg, arg[1])
-            elif arg[0] == 'c':
-                lo_message_add_char(self._msg, ord(arg[1]))
-            elif arg[0] == 's':
-                s = str(arg[1]); cs = s
-                lo_message_add_string(self._msg, cs)
-            elif arg[0] == 'S':
-                s = str(arg[1]); cs = s
-                lo_message_add_symbol(self._msg, cs)
-            elif arg[0] == 'T':
-                lo_message_add_true(self._msg)
-            elif arg[0] == 'F':
-                lo_message_add_false(self._msg)
-            elif arg[0] == 'N':
-                lo_message_add_nil(self._msg)
-            elif arg[0] == 'I':
-                lo_message_add_infinitum(self._msg)
-            elif arg[0] == 'm':
-                for n from 0 <= n < 4:
-                    midi[n] = arg[1][n]
-                lo_message_add_midi(self._msg, midi)
-            elif arg[0] == 't':
-                lo_message_add_timetag(self._msg, _double_to_timetag(arg[1]))
-            elif arg[0] == 'b':
-                b = _Blob(arg[1])
-                # make sure the blob is not deleted as long as this message exists
-                self._keep_refs.append(b)
-                lo_message_add_blob(self._msg, (<_Blob>b)._blob)
-            else:
-                raise TypeError("unknown OSC data type '" + str(arg[0]) + "'")
-
-        # bool is a subclass of int, so check those first
-        elif arg is True:
-            self.add(('T',))
-        elif arg is False:
-            self.add(('F',))
-        elif isinstance(arg, int):
-            self.add(('i', arg))
-        elif isinstance(arg, long):
-            self.add(('h', arg))
-        elif isinstance(arg, float):
-            self.add(('f', arg))
-        elif isinstance(arg, str):
-            self.add(('s', arg))
-        elif arg == None:
-            self.add(('N',))
-        elif arg == float('inf'):
-            self.add(('I',))
+        if t == 'i':
+            lo_message_add_int32(self._msg, v)
+        elif t == 'h':
+            lo_message_add_int64(self._msg, v)
+        elif t == 'f':
+            lo_message_add_float(self._msg, v)
+        elif t == 'd':
+            lo_message_add_double(self._msg, v)
+        elif t == 'c':
+            lo_message_add_char(self._msg, ord(v))
+        elif t == 's':
+            s = str(v); cs = s
+            lo_message_add_string(self._msg, cs)
+        elif t == 'S':
+            s = str(v); cs = s
+            lo_message_add_symbol(self._msg, cs)
+        elif t == 'T':
+            lo_message_add_true(self._msg)
+        elif t == 'F':
+            lo_message_add_false(self._msg)
+        elif t == 'N':
+            lo_message_add_nil(self._msg)
+        elif t == 'I':
+            lo_message_add_infinitum(self._msg)
+        elif t == 'm':
+            for n from 0 <= n < 4:
+                midi[n] = v[n]
+            lo_message_add_midi(self._msg, midi)
+        elif t == 't':
+            lo_message_add_timetag(self._msg, _double_to_timetag(v))
+        elif t == 'b':
+            b = _Blob(v)
+            # make sure the blob is not deleted as long as this message exists
+            self._keep_refs.append(b)
+            lo_message_add_blob(self._msg, (<_Blob>b)._blob)
         else:
-            try:    iter(arg)
-            except: raise TypeError("unsupported message argument type")
-            else:   self.add(('b', arg))
+            raise TypeError("unknown OSC data type '" + str(t) + "'")
+
+    def _add_auto(self, arg):
+        # bool is a subclass of int, so check those first
+        if arg is True:
+            self._add('T', None)
+        elif arg is False:
+            self._add('F', None)
+        elif isinstance(arg, int):
+            self._add('i', arg)
+        elif isinstance(arg, long):
+            self._add('h', arg)
+        elif isinstance(arg, float):
+            self._add('f', arg)
+        elif isinstance(arg, str):
+            self._add('s', arg)
+        elif arg == None:
+            self._add('N', None)
+        elif arg == float('inf'):
+            self._add('I', None)
+        else:
+            # last chance: could be a blob
+            try:
+                iter(arg)
+            except TypeError:
+                raise TypeError("unsupported message argument type")
+            self._add('b', arg)
 
 
 ################################################################################################
