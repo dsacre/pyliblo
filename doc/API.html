@@ -65,7 +65,7 @@ callback_func may be a global function or a class method, pyliblo will know what
 <h3>@make_method(path, typespec[, user_data])</h3>
 <p>
 Decorator function that basically serves the same purpose as add_method().
-The function being decorated must be a method of a class derived from Server.
+The function being decorated must be a method of a class derived from Server or ServerThread.
 Decorators require Python 2.4 or later.<br>
 Note that @make_method is defined at module scope, and not a member of class Server.
 </p>
