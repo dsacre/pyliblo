@@ -123,13 +123,13 @@ class ServerTestCase(ServerTestCaseBase):
         else:
             assert False
 
-    def testSendBlobOutOfRange(self):
-        try:
-            self.server.send(1234, '/blubb', [123, 456, 789])
-        except ValueError, e:
-            pass
-        else:
-            assert False
+#    def testSendBlobOutOfRange(self):
+#        try:
+#            self.server.send(1234, '/blubb', [123, 456, 789])
+#        except ValueError, e:
+#            pass
+#        else:
+#            assert False
 
     def testRecvTimeout(self):
         t1 = time.time()

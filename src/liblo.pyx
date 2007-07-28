@@ -220,6 +220,7 @@ class _CallbackData:
 
 cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
     cdef unsigned char *ptr
+    cdef uint32_t size, j
     args = []
 
     for i from 0 <= i < argc:
@@ -406,6 +407,7 @@ cdef class ServerThread(_ServerBase):
         __exception = None
         # make sure python can handle threading
         PyEval_InitThreads()
+
         self._thread = lo_server_thread_new(cs, _err_handler)
         if __exception:
             raise __exception
@@ -482,14 +484,13 @@ cdef class _Blob:
     def __init__(self, arr):
         # arr can by any sequence type
         cdef unsigned char *p
+        cdef uint32_t size, i
         size = len(arr)
         if size < 1:
             raise ValueError("blob is empty")
         # copy each element of arr to c array
         p = <unsigned char*>malloc(size)
         for i from 0 <= i < size:
-            if arr[i] < 0 or arr[i] > 255:
-                raise ValueError("blob data value out of range")
             p[i] = arr[i]
         # build blob
         self._blob = lo_blob_new(size, p)
