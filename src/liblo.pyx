@@ -605,10 +605,7 @@ cdef class Bundle:
         tt.sec, tt.frac = 0, 0
         self._keep_refs = []
 
-        if len(msgs) == 0 or isinstance(msgs[0], Message):
-            # no timetag
-            pass
-        else:
+        if len(msgs) and not isinstance(msgs[0], Message):
             t = msgs[0]
             if isinstance(t, (float, int, long)):
                 tt = _double_to_timetag(t)
