@@ -4,29 +4,16 @@
 from distutils.core import setup, Extension
 from distutils.command.build_scripts import build_scripts
 from distutils import util
-import os
+import os, sys
 
-try:
+
+if '--with-pyrex' in sys.argv:
     from Pyrex.Distutils import build_ext
-except ImportError:
-    # no pyrex, build using existing .c file
-    kwargs = {
-        'ext_modules': [
-            Extension('liblo', ['src/liblo.c'], libraries = ['lo'])
-        ],
-        'cmdclass': {
-        }
-    }
+    sys.argv.remove('--with-pyrex')
+    with_pyrex = True
 else:
-    # build with pyrex
-    kwargs = {
-        'ext_modules': [
-            Extension('liblo', ['src/liblo.pyx'], libraries = ['lo'])
-        ],
-        'cmdclass': {
-            'build_ext': build_ext
-        }
-    }
+    with_pyrex = False
+
 
 class build_scripts_rename(build_scripts):
     def copy_scripts(self):
@@ -39,11 +26,25 @@ class build_scripts_rename(build_scripts):
             print "renaming", before, "->", after
             os.rename(before, after)
 
-kwargs['cmdclass']['build_scripts'] = build_scripts_rename
+
+cmdclass = {
+    'build_scripts': build_scripts_rename
+}
+
+ext_modules = [
+    Extension('liblo',
+              [with_pyrex and 'src/liblo.pyx' or 'src/liblo.c'],
+              extra_compile_args = ['-fno-strict-aliasing'],
+              libraries = ['lo'])
+]
+
+if with_pyrex:
+    cmdclass['build_ext'] = build_ext
+
 
 setup (
     name = 'pyliblo',
-    version = '0.6.2',
+    version = '0.6.3',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
@@ -53,5 +54,6 @@ setup (
         'scripts/send_osc.py',
         'scripts/dump_osc.py',
     ],
-    **kwargs
+    cmdclass = cmdclass,
+    ext_modules = ext_modules
 )

@@ -1,8 +1,10 @@
 README
 COPYING
+NEWS
 setup.py
 src/liblo.pyx
 src/liblo.c
+src/fix-warnings.diff
 scripts/dump_osc.py
 scripts/send_osc.py
 doc/API.html

@@ -3,7 +3,13 @@ pyliblo - A Python wrapper for the liblo OSC library
 Copyright (C) 2007  Dominic Sacré  <dominic.sacre@gmx.de>
 
 
-To install, run "./setup.py install". This will install both the python module
-and the send_osc/dump_osc scripts.
+To install, run "./setup.py install". This will install both the python
+module and the send_osc/dump_osc scripts.
 
-See doc/API.html and doc/examples.html for documentation.
+By default, pyliblo is built from the supplied C file, which includes a
+patch to make it compile without some annoying (but harmless) warnings.
+To rebuild from the original Pyrex source, remove src/liblo.c, then pass
+'--with-pyrex' to setup.py.
+
+See doc/API.html and doc/examples.html for API documentation and some
+example code.

@@ -272,11 +272,10 @@ cdef int _callback_threaded(char *path, char *types, lo_arg **argv, int argc, lo
 
     # acquire the global interpreter lock
     gil = PyGILState_Ensure()
-    try:
-        # call the regular callback function
-        _callback(path, types, argv, argc, msg, cb_data)
-    finally:
-        PyGILState_Release(gil)
+    # call the regular callback function.
+    # this can't raise an exception, so it's safe to rely on the GIL to be released
+    _callback(path, types, argv, argc, msg, cb_data)
+    PyGILState_Release(gil)
     return 0
 
 
