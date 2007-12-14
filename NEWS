@@ -1,7 +1,12 @@
+2007-12-14: Version 0.6.4
+
+ * Avoid creating circular references when using methods as callback
+   functions, which in some cases prevented the server object from being
+   deleted properly.
+
 2007-08-10: Version 0.6.3
 
- * Patched the Pyrex-generated code to make it compile without
-   warnings.
+ * Patched the Pyrex-generated code to make it compile without warnings.
  * Always build from the existing C source by default.
 
 2007-07-29: Version 0.6.2
@@ -11,15 +16,14 @@
 
 2007-07-07: Version 0.6.1
 
- * Fixed a bug that caused the floats 0.0 and 1.0 to be sent as
-   boolean.
+ * Fixed a bug that caused the floats 0.0 and 1.0 to be sent as boolean.
    Thanks to Jesse Chappell for the patch.
 
 2007-05-20: Version 0.6
 
  * Added support for sending bundles, optionally with timestamps.
- * Added previously unsupported OSC data types (timetag, midi,
-   symbol, true/false/nil/infinitum).
+ * Added previously unsupported OSC data types (timetag, midi, symbol,
+   true/false/nil/infinitum).
  * New @make_method decorator.
  * Various bugfixes.
 
@@ -29,15 +33,13 @@
 
 2007-04-26: Version 0.5
 
- * Simplified the way arguments are passed to callback functions. For
-   the server side, this release is therefore incompatible with
-   previous versions!
+ * Simplified the way arguments are passed to callback functions. For the
+   server side, this release is therefore incompatible with previous versions!
  * Some more cleanup.
 
 2007-04-02: Version 0.3
 
- * Added class ServerThread for asynchronous dispatching of incoming
-   messages.
+ * Added class ServerThread for asynchronous dispatching of incoming messages.
 
 2007-04-01: Version 0.2
 
