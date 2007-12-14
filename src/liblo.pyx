@@ -9,7 +9,7 @@
 # (at your option) any later version.
 #
 
-cdef extern from "stdint.h":
+cdef extern from 'stdint.h':
     ctypedef long int32_t
     ctypedef unsigned long uint32_t
     ctypedef long long int64_t
@@ -23,7 +23,7 @@ cdef extern from 'stdlib.h':
 cdef extern from 'math.h':
     double modf(double x, double *iptr)
 
-cdef extern from "Python.h":
+cdef extern from 'Python.h':
     void PyEval_InitThreads()
     ctypedef void *PyGILState_STATE
     PyGILState_STATE PyGILState_Ensure()
@@ -347,11 +347,10 @@ cdef class _ServerBase:
         elif typespec == None:        t = NULL
         else: raise TypeError("typespec must be a string or None")
 
-        # use a weak reference if func is a method of self. otherwise we'd be creating a
-        # circular reference between self, having func in _keep_refs, and the bound
-        # method func, which implicitly keeps a reference to its class instance, thus
-        # causing the server never to be deleted.
-        if _inspect.ismethod(func) and func.im_self == self:
+        # use a weak reference if func is a method, to avoid circular references in
+        # cases where func is a method an object that also has a reference to the server
+        # (e.g. when deriving from the Server class)
+        if _inspect.ismethod(func):
             func = _weakref_method(func)
 
         cb = _CallbackData(func, user_data)
