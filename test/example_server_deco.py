@@ -23,5 +23,4 @@ except ServerError, err:
     sys.exit()
 
 server.start()
-raw_input("press any key to quit...\n")
-
+raw_input("press enter to quit...\n")
