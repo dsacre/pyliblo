@@ -1,7 +1,7 @@
---- liblo.c.orig	2007-08-03 12:04:59.000000000 +0200
-+++ liblo.c	2007-08-03 12:07:27.000000000 +0200
-@@ -114,9 +114,9 @@
- static PyObject *__pyx_k16;
+--- liblo.c.orig	2008-03-03 21:39:06.000000000 +0100
++++ liblo.c	2008-03-03 21:40:07.000000000 +0100
+@@ -115,9 +115,9 @@
+ static PyObject *__pyx_k17;
  static lo_timetag (__pyx_f_5liblo__double_to_timetag(double )); /*proto*/
  static double (__pyx_f_5liblo__timetag_to_double(lo_timetag )); /*proto*/
 -static int (__pyx_f_5liblo__callback(char (*),char (*),lo_arg (*(*)),int ,lo_message ,void (*))); /*proto*/
@@ -13,7 +13,7 @@
  
  
  /* Implementation of liblo */
-@@ -841,7 +841,7 @@
+@@ -773,7 +773,7 @@
  static PyObject *__pyx_n_ismethod;
  
  
@@ -22,7 +22,7 @@
    unsigned char (*__pyx_v_ptr);
    uint32_t __pyx_v_size;
    uint32_t __pyx_v_j;
-@@ -1262,7 +1262,7 @@
+@@ -1231,7 +1231,7 @@
    return __pyx_r;
  }
  
@@ -31,7 +31,7 @@
    PyGILState_STATE __pyx_v_gil;
    int __pyx_r;
  
-@@ -1286,7 +1286,7 @@
+@@ -1255,7 +1255,7 @@
  
  static PyObject *__pyx_n___exception;
  

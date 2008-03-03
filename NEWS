@@ -1,3 +1,11 @@
+2008-03-03: Version 0.7.0
+
+ * Fixed memory leaks, caused by failure to free() the result of
+   lo_server_get_url() and lo_address_get_url().
+ * Added parameter to Server.register_methods() to allow registering
+   functions of an object other than the server itself.
+ * Allow callback functions to have a variable number of arguments (*args).
+
 2007-12-14: Version 0.6.4
 
  * Avoid creating circular references when using methods as callback
