@@ -1,7 +1,7 @@
 #
 # pyliblo - A Python wrapper for the liblo OSC library
 #
-# Copyright (C) 2007  Dominic Sacré  <dominic.sacre@gmx.de>
+# Copyright (C) 2007-2008  Dominic Sacré  <dominic.sacre@gmx.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -129,11 +129,6 @@ class _weakref_method:
     def __call__(self, *args):
         return _new.instancemethod(self.f, self.c(), self.c().__class__)
 
-def _is_int(s):
-    try: int(s)
-    except ValueError: return False
-    else: return True
-
 
 cdef class _ServerBase
 cdef class Address
@@ -221,6 +216,7 @@ class _CallbackData:
 cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
     cdef unsigned char *ptr
     cdef uint32_t size, j
+    cdef char *url
     args = []
 
     for i from 0 <= i < argc:
@@ -250,7 +246,9 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
 
         args.append(v)
 
-    src = Address(lo_address_get_url(lo_message_get_source(msg)))
+    url = lo_address_get_url(lo_message_get_source(msg))
+    src = Address(url)
+    free(url)
 
     cb = <object>cb_data
     if isinstance(cb.func, _weakref_method):
@@ -259,11 +257,16 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         func = cb.func
     func_args = (path, args, types, src, cb.data)
 
-    # number of arguments to call the function with
-    n = len(_inspect.getargspec(func)[0])
-    if _inspect.ismethod(func): n = n - 1  # self doesn't count
+    # call function
+    if _inspect.getargspec(func)[1] == None:
+        # determine number of arguments to call the function with
+        n = len(_inspect.getargspec(func)[0])
+        if _inspect.ismethod(func): n = n - 1  # self doesn't count
+        func(*func_args[0:n])
+    else:
+        # function has argument list, pass all arguments
+        func(*func_args)
 
-    func(*func_args[0:n])
     return 0
 
 
@@ -317,10 +320,12 @@ cdef class _ServerBase:
         if reg_methods:
             self.register_methods()
 
-    def register_methods(self):
+    def register_methods(self, obj=None):
+        if obj == None:
+            obj = self
         # find and register methods that were defined using decorators
         methods = []
-        for m in _inspect.getmembers(self):
+        for m in _inspect.getmembers(obj):
             if hasattr(m[1], '_method_spec'):
                 for s in m[1]._method_spec:
                     methods.append((s, m[1]))
@@ -330,7 +335,11 @@ cdef class _ServerBase:
             self.add_method(e[0][1], e[0][2], e[1], e[0][3])
 
     def get_url(self):
-        return lo_server_get_url(self._serv)
+        cdef char *tmp
+        tmp = lo_server_get_url(self._serv)
+        r = tmp
+        free(tmp)
+        return r
 
     def get_port(self):
         return lo_server_get_port(self._serv)
@@ -447,7 +456,7 @@ cdef class Address:
             self._addr = lo_address_new(a, cs)
             # assume this cannot fail
         else:
-            if isinstance(a, int) or (isinstance(a, str) and _is_int(a)):
+            if isinstance(a, int) or (isinstance(a, str) and a.isdigit()):
                 # Address(port)
                 s = str(a); cs = s
                 self._addr = lo_address_new(NULL, cs)
@@ -463,7 +472,11 @@ cdef class Address:
         lo_address_free(self._addr)
 
     def get_url(self):
-        return lo_address_get_url(self._addr)
+        cdef char *tmp
+        tmp = lo_address_get_url(self._addr)
+        r = tmp
+        free(tmp)
+        return r
 
     def get_hostname(self):
         return lo_address_get_hostname(self._addr)
@@ -516,8 +529,10 @@ cdef class Message:
     def add(self, *args):
         for arg in args:
             if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
-                if len(arg) == 2: self._add(arg[0], arg[1])
-                else: self._add(arg[0], None)
+                if len(arg) == 2:
+                    self._add(arg[0], arg[1])
+                else:
+                    self._add(arg[0], None)
             else:
                 self._add_auto(arg)
 
