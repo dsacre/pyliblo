@@ -1,0 +1,22 @@
+.TH send_osc 1
+
+.SH NAME
+send_osc \- Sends a single OSC message
+
+.SH SYNOPSIS
+.B send_osc
+\fIport\fP \fIpath\fP [\fIargs\fP...]
+
+.SH DESCRIPTION
+.B send_osc
+sends an OSC message to the specified \fIport\fP (UDP port number, or any
+other address supported by liblo).
+The message will be delived to \fIpath\fP, with the remaining arguments as
+data items.  Valid integer and float values will be sent as such, anything
+else is sent as a string.
+
+.SH AUTHOR
+Dominic Sacre <dominic.sacre@gmx.de>
+
+.SH SEE ALSO
+dump_osc(1)

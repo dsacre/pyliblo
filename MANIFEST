@@ -7,5 +7,7 @@ src/liblo.c
 src/fix-warnings.diff
 scripts/dump_osc.py
 scripts/send_osc.py
+scripts/dump_osc.1
+scripts/send_osc.1
 doc/API.html
 doc/examples.html

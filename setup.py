@@ -54,6 +54,12 @@ setup (
         'scripts/send_osc.py',
         'scripts/dump_osc.py',
     ],
+    data_files = [
+        ('share/man/man1', [
+            'scripts/send_osc.1',
+            'scripts/dump_osc.1',
+        ]),
+    ],
     cmdclass = cmdclass,
     ext_modules = ext_modules
 )
