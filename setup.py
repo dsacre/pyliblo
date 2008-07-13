@@ -44,7 +44,7 @@ if with_pyrex:
 
 setup (
     name = 'pyliblo',
-    version = '0.7.0',
+    version = '0.7.1',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
