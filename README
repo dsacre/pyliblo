@@ -2,6 +2,8 @@ pyliblo - A Python wrapper for the liblo OSC library
 
 Copyright (C) 2007-2008  Dominic Sacré  <dominic.sacre@gmx.de>
 
+http://das.nasophon.de/pyliblo/
+
 
 To install, run "./setup.py install". This will install both the python
 module and the send_osc/dump_osc scripts.

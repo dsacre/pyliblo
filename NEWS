@@ -1,3 +1,7 @@
+2008-08-03: Version 0.7.1
+
+ * Added manpages for send_osc and dump_osc.
+
 2008-03-03: Version 0.7.0
 
  * Fixed memory leaks, caused by failure to free() the result of
