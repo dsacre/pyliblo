@@ -529,11 +529,13 @@ cdef class Message:
     def add(self, *args):
         for arg in args:
             if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
+                # type explicitly specified
                 if len(arg) == 2:
                     self._add(arg[0], arg[1])
                 else:
                     self._add(arg[0], None)
             else:
+                # detect type automatically
                 self._add_auto(arg)
 
     def _add(self, t, v):
@@ -541,13 +543,13 @@ cdef class Message:
         cdef uint8_t midi[4]
 
         if t == 'i':
-            lo_message_add_int32(self._msg, v)
+            lo_message_add_int32(self._msg, int(v))
         elif t == 'h':
-            lo_message_add_int64(self._msg, v)
+            lo_message_add_int64(self._msg, long(v))
         elif t == 'f':
-            lo_message_add_float(self._msg, v)
+            lo_message_add_float(self._msg, float(v))
         elif t == 'd':
-            lo_message_add_double(self._msg, v)
+            lo_message_add_double(self._msg, float(v))
         elif t == 'c':
             lo_message_add_char(self._msg, ord(v))
         elif t == 's':
@@ -647,4 +649,3 @@ cdef class Bundle:
             m = Message(*msgs)
             self._keep_refs.append(m)
             lo_bundle_add_message(self._bundle, (<Message>m)._path, (<Message>m)._msg)
-
