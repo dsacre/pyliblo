@@ -12,7 +12,7 @@
 import sys
 import liblo
 
-def send_osc(port, path, *args):
+def send_osc_auto(port, path, *args):
     m = liblo.Message(path)
 
     for a in args:
@@ -25,14 +25,33 @@ def send_osc(port, path, *args):
 
     liblo.send(port, m)
 
+
+def send_osc_manual(port, path, types, *args):
+    if len(types) != len(args):
+        sys.exit("length of type string doesn't match number of arguments")
+
+    m = liblo.Message(path)
+    try:
+        for a, t in zip(args, types):
+            m.add((t, a))
+    except Exception, e:
+        sys.exit(str(e))
+
+    liblo.send(port, m)
+
+
 if __name__ == '__main__':
     # display help
     if len(sys.argv) == 1 or sys.argv[1] in ("-h", "--help"):
-        sys.exit("Usage: " + sys.argv[0] + " port path [args...]")
+        sys.exit("Usage: " + sys.argv[0] + " port path [,types] [args...]")
 
     # require at least two arguments (target port/url and message path)
     if len(sys.argv) < 2:
         sys.exit("please specify a port or URL")
     if len(sys.argv) < 3:
         sys.exit("please specify a message path")
-    send_osc(*sys.argv[1:])
+
+    if len(sys.argv) > 3 and sys.argv[3].startswith(','):
+        send_osc_manual(sys.argv[1], sys.argv[2], sys.argv[3][1:], *sys.argv[4:])
+    else:
+        send_osc_auto(*sys.argv[1:])
