@@ -44,12 +44,12 @@ if with_pyrex:
 
 setup (
     name = 'pyliblo',
-    version = '0.7.1',
+    version = '0.8.0',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
-    description = 'A Python wrapper for the liblo OSC library',
-    license = "GPL",
+    description = 'Python bindings for the liblo OSC library',
+    license = 'LGPL',
     scripts = [
         'scripts/send_osc.py',
         'scripts/dump_osc.py',
