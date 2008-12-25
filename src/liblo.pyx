@@ -195,7 +195,7 @@ def send(target, *msg):
 #  Server
 ################################################################################################
 
-class ServerError:
+class ServerError(Exception):
     def __init__(self, num, msg, where):
         self.num = num
         self.msg = msg
@@ -262,12 +262,15 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         # determine number of arguments to call the function with
         n = len(_inspect.getargspec(func)[0])
         if _inspect.ismethod(func): n = n - 1  # self doesn't count
-        func(*func_args[0:n])
+        r = func(*func_args[0:n])
     else:
         # function has argument list, pass all arguments
-        func(*func_args)
+        r = func(*func_args)
 
-    return 0
+    if r == None:
+        return 0
+    else:
+        return r
 
 
 cdef int _callback_threaded(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
@@ -437,7 +440,7 @@ cdef class ServerThread(_ServerBase):
 #  Address
 ################################################################################################
 
-class AddressError:
+class AddressError(Exception):
     def __init__(self, msg):
         self.msg = msg
     def __str__(self):

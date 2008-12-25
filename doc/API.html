@@ -21,9 +21,17 @@
 
 <body>
 
-<h1>pyliblo 0.7 - API Documentation</h1>
+<h1>pyliblo 0.8 - API Documentation</h1>
 
-<h3>import liblo</h3>
+<p>
+For the most part, pyliblo is just a thin wrapper around liblo, which does all the real work.
+For questions not answered here, also see the
+<a href="http://liblo.sourceforge.net/docs/modules.html">liblo documentation</a>.
+</p>
+
+<p>
+The Python module is simply called <b>liblo</b>.
+</p>
 
 <h2>functions</h2>
 
@@ -85,7 +93,9 @@ called when a matching OSC message is received.<br>
 args will be a list of message arguments, using appropriate built-in Python data types.
 types is a string with the typespec of the message.
 src is an <b>Address</b> object, containing the address the message came from.
-types, src and user_data may be omitted if not needed.
+types, src and user_data may be omitted if not needed.<br>
+The callback should return 0 (or simply nothing) if the message has been dealt with correctly,
+or non-0 to look for another matching message handler.
 </p>
 
 <h3>recv([timeout])</h3>
