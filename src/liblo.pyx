@@ -15,6 +15,9 @@ cdef extern from 'stdint.h':
     ctypedef long long int64_t
     ctypedef unsigned char uint8_t
 
+cdef extern from *:
+    ctypedef char * const_char_ptr "const char *"
+
 cdef extern from 'stdlib.h':
     ctypedef unsigned size_t
     void *malloc(size_t size)
@@ -53,8 +56,8 @@ cdef extern from 'lo/lo.h':
         uint8_t m[4]
         lo_timetag t
 
-    ctypedef void(*lo_err_handler)(int num, char *msg, char *where)
-    ctypedef int(*lo_method_handler)(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *user_data)
+    ctypedef void(*lo_err_handler)(int num, const_char_ptr msg, const_char_ptr where)
+    ctypedef int(*lo_method_handler)(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *user_data)
 
     # send
     int lo_send_message_from(lo_address targ, lo_server serv, char *path, lo_message msg)
@@ -213,7 +216,7 @@ class _CallbackData:
         self.data = data
 
 
-cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
+cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
     cdef unsigned char *ptr
     cdef uint32_t size, j
     cdef char *url
@@ -273,7 +276,7 @@ cdef int _callback(char *path, char *types, lo_arg **argv, int argc, lo_message 
         return r
 
 
-cdef int _callback_threaded(char *path, char *types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
+cdef int _callback_threaded(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
     cdef PyGILState_STATE gil
 
     # acquire the global interpreter lock
@@ -285,7 +288,7 @@ cdef int _callback_threaded(char *path, char *types, lo_arg **argv, int argc, lo
     return 0
 
 
-cdef void _err_handler(int num, char *msg, char *where):
+cdef void _err_handler(int num, const_char_ptr msg, const_char_ptr where):
     # can't raise exception in cdef function, so use a global variable instead
     global __exception
     __exception = ServerError(num, msg, None)
