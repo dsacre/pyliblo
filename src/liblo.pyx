@@ -19,7 +19,7 @@ cdef extern from 'stdint.h':
     ctypedef unsigned char uint8_t
 
 cdef extern from *:
-    ctypedef char * const_char_ptr "const char *"
+    ctypedef char * const_char_ptr 'const char *'
 
 cdef extern from 'stdlib.h':
     ctypedef unsigned size_t
@@ -213,9 +213,9 @@ class ServerError(Exception):
         self.msg = msg
         self.where = where
     def __str__(self):
-        s = "server error " + str(self.num)
-        if self.where: s = s + " in " + self.where
-        s = s + ": " + self.msg
+        s = "server error %d" % self.num
+        if self.where: s += " in %s" % self.where
+        s += ": %s" % self.msg
         return s
 
 
@@ -325,7 +325,7 @@ class make_method:
 
     def __init__(self, path, types, user_data = None):
         self.spec = (make_method._counter, path, types, user_data)
-        make_method._counter = make_method._counter + 1
+        make_method._counter += 1
 
     def __call__(self, f):
         # we can't access the Server object here, because at the time the decorator is run it
@@ -400,12 +400,12 @@ cdef class _ServerBase:
 
 
 cdef class Server(_ServerBase):
-
     def __init__(self, port = None, proto = None, **kwargs):
         cdef char *cs
 
-        p = str(port); cs = p
-        if port == None:
+        if port != None:
+            p = str(port); cs = p
+        else:
             cs = NULL
 
         global __exception
@@ -435,8 +435,9 @@ cdef class ServerThread(_ServerBase):
     def __init__(self, port = None, proto = None, **kwargs):
         cdef char *cs
 
-        p = str(port); cs = p
-        if port == None:
+        if port != None:
+            p = str(port); cs = p
+        else:
             cs = NULL
 
         # make sure python can handle threading
@@ -470,7 +471,7 @@ class AddressError(Exception):
     def __init__(self, msg):
         self.msg = msg
     def __str__(self):
-        return "address error: " + self.msg
+        return "address error: %s" % self.msg
 
 
 cdef class Address:
@@ -495,7 +496,7 @@ cdef class Address:
                 self._addr = lo_address_new_from_url(a)
                 # lo_address_errno() is of no use if self._addr == NULL
                 if not self._addr:
-                    raise AddressError("invalid URL '" + str(a) + "'")
+                    raise AddressError("invalid URL '%s'" % str(a))
 
     def __dealloc__(self):
         lo_address_free(self._addr)
@@ -607,7 +608,7 @@ cdef class Message:
             self._keep_refs.append(b)
             lo_message_add_blob(self._msg, (<_Blob>b)._blob)
         else:
-            raise TypeError("unknown OSC data type '" + str(t) + "'")
+            raise TypeError("unknown OSC data type '%s'" % str(t))
 
     def _add_auto(self, arg):
         # bool is a subclass of int, so check those first
