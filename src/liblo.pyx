@@ -9,6 +9,9 @@
 # License, or (at your option) any later version.
 #
 
+__version__ = '0.8.0'
+
+
 cdef extern from 'stdint.h':
     ctypedef long int32_t
     ctypedef unsigned long uint32_t
@@ -56,6 +59,12 @@ cdef extern from 'lo/lo.h':
         uint8_t m[4]
         lo_timetag t
 
+    cdef enum:
+        LO_DEFAULT  = 0x0
+        LO_UDP      = 0x1
+        LO_UNIX     = 0x2
+        LO_TCP      = 0x4
+
     ctypedef void(*lo_err_handler)(int num, const_char_ptr msg, const_char_ptr where)
     ctypedef int(*lo_method_handler)(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *user_data)
 
@@ -64,7 +73,7 @@ cdef extern from 'lo/lo.h':
     int lo_send_bundle_from(lo_address targ, lo_server serv, lo_bundle b)
 
     # server
-    lo_server lo_server_new(char *port, lo_err_handler err_h)
+    lo_server lo_server_new_with_proto(char *port, int proto, lo_err_handler err_h)
     void lo_server_free(lo_server s)
     char *lo_server_get_url(lo_server s)
     int lo_server_get_port(lo_server s)
@@ -73,7 +82,7 @@ cdef extern from 'lo/lo.h':
     int lo_server_recv_noblock(lo_server s, int timeout)
 
     # server thread
-    lo_server_thread lo_server_thread_new(char *port, lo_err_handler err_h)
+    lo_server_thread lo_server_thread_new_with_proto(char *port, int proto, lo_err_handler err_h)
     void lo_server_thread_free(lo_server_thread st)
     lo_server lo_server_thread_get_server(lo_server_thread st)
     void lo_server_thread_start(lo_server_thread st)
@@ -288,6 +297,19 @@ cdef int _callback_threaded(const_char_ptr path, const_char_ptr types, lo_arg **
     return 0
 
 
+cdef int _str_to_proto(s):
+    if s == None or s == '':
+        return LO_DEFAULT
+    elif s == 'udp':
+        return LO_UDP
+    elif s == 'tcp':
+        return LO_TCP
+    elif s == 'unix':
+        return LO_UNIX
+    else:
+        raise ValueError("invalid protocol string")
+
+
 cdef void _err_handler(int num, const_char_ptr msg, const_char_ptr where):
     # can't raise exception in cdef function, so use a global variable instead
     global __exception
@@ -321,9 +343,10 @@ cdef class _ServerBase:
     cdef lo_method_handler _cb_func
     cdef object _keep_refs
 
-    def __init__(self, reg_methods):
+    def __init__(self, kwargs):
         self._keep_refs = []
-        if reg_methods:
+
+        if not kwargs.has_key('reg_methods') or kwargs['reg_methods']:
             self.register_methods()
 
     def register_methods(self, obj=None):
@@ -378,7 +401,7 @@ cdef class _ServerBase:
 
 cdef class Server(_ServerBase):
 
-    def __init__(self, port = None, reg_methods = True):
+    def __init__(self, port = None, proto = None, **kwargs):
         cdef char *cs
 
         p = str(port); cs = p
@@ -387,12 +410,12 @@ cdef class Server(_ServerBase):
 
         global __exception
         __exception = None
-        self._serv = lo_server_new(cs, _err_handler)
+        self._serv = lo_server_new_with_proto(cs, _str_to_proto(proto), _err_handler)
         if __exception:
             raise __exception
 
         self._cb_func = _callback
-        _ServerBase.__init__(self, reg_methods)
+        _ServerBase.__init__(self, kwargs)
 
     def __dealloc__(self):
         lo_server_free(self._serv)
@@ -409,25 +432,25 @@ cdef class Server(_ServerBase):
 cdef class ServerThread(_ServerBase):
     cdef lo_server_thread _thread
 
-    def __init__(self, port = None, reg_methods = True):
+    def __init__(self, port = None, proto = None, **kwargs):
         cdef char *cs
 
         p = str(port); cs = p
         if port == None:
             cs = NULL
 
-        global __exception
-        __exception = None
         # make sure python can handle threading
         PyEval_InitThreads()
 
-        self._thread = lo_server_thread_new(cs, _err_handler)
+        global __exception
+        __exception = None
+        self._thread = lo_server_thread_new_with_proto(cs, _str_to_proto(proto), _err_handler)
         if __exception:
             raise __exception
         self._serv = lo_server_thread_get_server(self._thread)
 
         self._cb_func = _callback_threaded
-        _ServerBase.__init__(self, reg_methods)
+        _ServerBase.__init__(self, kwargs)
 
     def __dealloc__(self):
         lo_server_thread_free(self._thread)
