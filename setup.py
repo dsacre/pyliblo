@@ -3,7 +3,7 @@
 
 from distutils.core import setup, Extension
 from distutils.command.build_scripts import build_scripts
-from distutils import util
+from distutils import util, log
 import os, sys
 
 
@@ -23,7 +23,7 @@ class build_scripts_rename(build_scripts):
             f = util.convert_path(s)
             before = os.path.join(self.build_dir, os.path.basename(f))
             after = os.path.splitext(before)[0]
-            print "renaming", before, "->", after
+            log.info("renaming %s -> %s" % (before, after))
             os.rename(before, after)
 
 
