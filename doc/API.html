@@ -98,8 +98,8 @@ args will be a list of message arguments, using appropriate built-in Python data
 types is a string with the typespec of the message.
 src is an <b>Address</b> object, containing the address the message came from.
 types, src and user_data may be omitted if not needed.<br>
-The callback should return 0 (or simply nothing) if the message has been dealt with correctly,
-or non-0 to look for another matching message handler.
+The callback should return zero (or nothing/None) if the message has been dealt with correctly,
+or non-zero to look for another matching message handler.
 </p>
 
 <h3>recv([timeout])</h3>
