@@ -207,6 +207,11 @@ def send(target, *msg):
 #  Server
 ################################################################################################
 
+UDP  = LO_UDP
+TCP  = LO_TCP
+UNIX = LO_UNIX
+
+
 class ServerError(Exception):
     def __init__(self, num, msg, where):
         self.num = num
@@ -297,19 +302,6 @@ cdef int _callback_threaded(const_char_ptr path, const_char_ptr types, lo_arg **
     return 0
 
 
-cdef int _str_to_proto(s):
-    if s == None or s == '':
-        return LO_DEFAULT
-    elif s == 'udp':
-        return LO_UDP
-    elif s == 'tcp':
-        return LO_TCP
-    elif s == 'unix':
-        return LO_UNIX
-    else:
-        raise ValueError("invalid protocol string")
-
-
 cdef void _err_handler(int num, const_char_ptr msg, const_char_ptr where):
     # can't raise exception in cdef function, so use a global variable instead
     global __exception
@@ -323,7 +315,7 @@ class make_method:
     # counter to keep track of the order in which the callback functions where defined
     _counter = 0
 
-    def __init__(self, path, types, user_data = None):
+    def __init__(self, path, types, user_data=None):
         self.spec = (make_method._counter, path, types, user_data)
         make_method._counter += 1
 
@@ -373,7 +365,7 @@ cdef class _ServerBase:
     def get_port(self):
         return lo_server_get_port(self._serv)
 
-    def add_method(self, path, typespec, func, user_data = None):
+    def add_method(self, path, typespec, func, user_data=None):
         cdef char *p
         cdef char *t
 
@@ -400,7 +392,7 @@ cdef class _ServerBase:
 
 
 cdef class Server(_ServerBase):
-    def __init__(self, port = None, proto = None, **kwargs):
+    def __init__(self, port=None, proto=LO_DEFAULT, **kwargs):
         cdef char *cs
 
         if port != None:
@@ -410,7 +402,7 @@ cdef class Server(_ServerBase):
 
         global __exception
         __exception = None
-        self._serv = lo_server_new_with_proto(cs, _str_to_proto(proto), _err_handler)
+        self._serv = lo_server_new_with_proto(cs, proto, _err_handler)
         if __exception:
             raise __exception
 
@@ -420,7 +412,7 @@ cdef class Server(_ServerBase):
     def __dealloc__(self):
         lo_server_free(self._serv)
 
-    def recv(self, timeout = None):
+    def recv(self, timeout=None):
         if timeout != None:
             r = lo_server_recv_noblock(self._serv, timeout)
             return r and True or False
@@ -432,7 +424,7 @@ cdef class Server(_ServerBase):
 cdef class ServerThread(_ServerBase):
     cdef lo_server_thread _thread
 
-    def __init__(self, port = None, proto = None, **kwargs):
+    def __init__(self, port=None, proto=LO_DEFAULT, **kwargs):
         cdef char *cs
 
         if port != None:
@@ -445,7 +437,7 @@ cdef class ServerThread(_ServerBase):
 
         global __exception
         __exception = None
-        self._thread = lo_server_thread_new_with_proto(cs, _str_to_proto(proto), _err_handler)
+        self._thread = lo_server_thread_new_with_proto(cs, proto, _err_handler)
         if __exception:
             raise __exception
         self._serv = lo_server_thread_get_server(self._thread)
@@ -477,7 +469,7 @@ class AddressError(Exception):
 cdef class Address:
     cdef lo_address _addr
 
-    def __init__(self, a, b = None):
+    def __init__(self, a, b=None):
         cdef char *cs
 
         if b:
