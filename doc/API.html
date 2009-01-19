@@ -33,6 +33,7 @@ For questions not answered here, also see the
 The Python module is simply called <b>liblo</b>.
 </p>
 
+
 <h2>functions</h2>
 
 <h3>send(target, message)<br>
@@ -50,15 +51,18 @@ Returns the current time as a float in OSC format, that is, the number of second
 the epoch (January 1, 1900).
 </p>
 
+
 <h2>class Server</h2>
 
-<h3>Server([port[, reg_methods]])</h3>
+<h3>Server([port[, proto[, **kwargs]]])</h3>
 <p>
 Creates a new <b>Server</b> object, which can receive OSC messages.<br>
 port may be a decimal port number or a UNIX socket path.
 If omitted, an arbitrary free UDP port will be used.<br>
-Pass False for reg_methods if you don't want the init function to automatically
-register callback functions defined with the @make_method decorator.<br>
+proto can be one of the constants UDP, TCP, UNIX.<br>
+Optional keyword arguments:<br>
+<b>reg_methods</b>: False if you don't want the init function to automatically
+register callbacks defined with the @make_method decorator.<br>
 Exceptions: <b>ServerError</b>
 </p>
 
@@ -125,6 +129,12 @@ Returns the server's URL.
 Returns the server's port number.
 </p>
 
+<h3>get_protocol()</h3>
+<p>
+Returns the server's protocol (one of the constants UDP, TCP, UNIX).
+</p>
+
+
 <h2>class ServerThread</h2>
 <p>
 Unlike <b>Server</b>, <b>ServerThread</b> uses its own thread which runs in the background
@@ -142,6 +152,7 @@ Starts the server thread, liblo will now start to dispatch any messages it recei
 <p>
 Stops the server thread.
 </p>
+
 
 <h2>class Address</h2>
 
@@ -168,6 +179,12 @@ Returns the address' hostname.
 Returns the address' port number.
 </p>
 
+<h3>get_protocol()</h3>
+<p>
+Returns the address' protocol (one of the constants UDP, TCP, UNIX).
+</p>
+
+
 <h2>class Message</h2>
 
 <h3>Message(path[, arg, ...])</h3>
@@ -179,6 +196,7 @@ Creates a new <b>Message</b> object.
 <p>
 Appends the given argument(s) to the message.
 </p>
+
 
 <h2>class Bundle</h2>
 
