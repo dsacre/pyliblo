@@ -343,7 +343,7 @@ cdef class _ServerBase:
     cdef lo_method_handler _cb_func
     cdef object _keep_refs
 
-    def __init__(self, kwargs):
+    def __init__(self, **kwargs):
         self._keep_refs = []
 
         if not kwargs.has_key('reg_methods') or kwargs['reg_methods']:
@@ -415,7 +415,7 @@ cdef class Server(_ServerBase):
             raise __exception
 
         self._cb_func = _callback
-        _ServerBase.__init__(self, kwargs)
+        _ServerBase.__init__(self, **kwargs)
 
     def __dealloc__(self):
         lo_server_free(self._serv)
@@ -451,7 +451,7 @@ cdef class ServerThread(_ServerBase):
         self._serv = lo_server_thread_get_server(self._thread)
 
         self._cb_func = _callback_threaded
-        _ServerBase.__init__(self, kwargs)
+        _ServerBase.__init__(self, **kwargs)
 
     def __dealloc__(self):
         lo_server_thread_free(self._thread)
