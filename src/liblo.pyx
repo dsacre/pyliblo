@@ -77,6 +77,7 @@ cdef extern from 'lo/lo.h':
     void lo_server_free(lo_server s)
     char *lo_server_get_url(lo_server s)
     int lo_server_get_port(lo_server s)
+    int lo_server_get_protocol(lo_server s)
     lo_method lo_server_add_method(lo_server s, char *path, char *typespec, lo_method_handler h, void *user_data)
     int lo_server_recv(lo_server s)
     int lo_server_recv_noblock(lo_server s, int timeout)
@@ -95,6 +96,7 @@ cdef extern from 'lo/lo.h':
     char *lo_address_get_url(lo_address a)
     char *lo_address_get_hostname(lo_address a)
     char *lo_address_get_port(lo_address a)
+    int lo_address_get_protocol(lo_address a)
 
     # message
     lo_message lo_message_new()
@@ -365,6 +367,9 @@ cdef class _ServerBase:
     def get_port(self):
         return lo_server_get_port(self._serv)
 
+    def get_protocol(self):
+        return lo_server_get_protocol(self._serv)
+
     def add_method(self, path, typespec, func, user_data=None):
         cdef char *p
         cdef char *t
@@ -505,6 +510,9 @@ cdef class Address:
 
     def get_port(self):
         return lo_address_get_port(self._addr)
+
+    def get_protocol(self):
+        return lo_address_get_protocol(self._addr)
 
 
 ################################################################################################
