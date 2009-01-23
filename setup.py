@@ -32,10 +32,15 @@ cmdclass = {
 }
 
 ext_modules = [
-    Extension('liblo',
-              [with_pyrex and 'src/liblo.pyx' or 'src/liblo.c'],
-              extra_compile_args = ['-fno-strict-aliasing'],
-              libraries = ['lo'])
+    Extension(
+        'liblo',
+        [with_pyrex and 'src/liblo.pyx' or 'src/liblo.c'],
+        extra_compile_args = [
+            '-fno-strict-aliasing',
+            '-Werror-implicit-function-declaration',
+        ],
+        libraries = ['lo']
+    )
 ]
 
 if with_pyrex:
