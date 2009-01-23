@@ -5,8 +5,8 @@ Copyright (C) 2007-2009  Dominic Sacré  <dominic.sacre@gmx.de>
 http://das.nasophon.de/pyliblo/
 
 
-To install, run "./setup.py install". This will install both the python
-module and the send_osc/dump_osc scripts.
+To install, run "./setup.py build", followed by "./setup.py install". This
+will install both the python module and the send_osc/dump_osc scripts.
 
 By default, pyliblo is built from the supplied C file, which includes a
 patch to make it compile without some annoying (but harmless) warnings.

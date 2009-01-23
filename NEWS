@@ -1,3 +1,12 @@
+2009-01-19: pyliblo 0.7.2
+
+  * Fixed all compiler warnings properly in Pyrex, without patching the
+    generated C code.
+  * Return values of callback functions are no longer ignored, but handled as
+    in liblo.
+  * The send_osc script can now be run with an explicit type string, instead of
+    trying to determine the argument types automatically.
+
 2008-08-03: pyliblo 0.7.1
 
   * Added manpages for send_osc and dump_osc.
