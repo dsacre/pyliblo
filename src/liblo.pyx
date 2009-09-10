@@ -91,6 +91,7 @@ cdef extern from 'lo/lo.h':
 
     # address
     lo_address lo_address_new(char *host, char *port)
+    lo_address lo_address_new_with_proto(int proto, char *host, char *port)
     lo_address lo_address_new_from_url(char *url)
     void lo_address_free(lo_address)
     char *lo_address_get_url(lo_address a)
@@ -150,6 +151,11 @@ cdef class Message
 cdef class Bundle
 
 
+UDP  = LO_UDP
+TCP  = LO_TCP
+UNIX = LO_UNIX
+
+
 ################################################################################################
 #  timetag
 ################################################################################################
@@ -181,7 +187,8 @@ def _send(target, src, *msg):
     if isinstance(target, Address):
         addr = target
     elif isinstance(target, tuple):
-        addr = Address(target[0], target[1])
+        # unpack tuple
+        addr = Address(*target)
     else:
         addr = Address(target)
 
@@ -208,11 +215,6 @@ def send(target, *msg):
 ################################################################################################
 #  Server
 ################################################################################################
-
-UDP  = LO_UDP
-TCP  = LO_TCP
-UNIX = LO_UNIX
-
 
 class ServerError(Exception):
     def __init__(self, num, msg, where):
@@ -474,26 +476,31 @@ class AddressError(Exception):
 cdef class Address:
     cdef lo_address _addr
 
-    def __init__(self, a, b=None):
+    def __init__(self, addr, addr2=None, proto=None):
         cdef char *cs
 
-        if b:
-            # Address("host", port)
-            s = str(b); cs = s
-            self._addr = lo_address_new(a, cs)
-            # assume this cannot fail
-        else:
-            if isinstance(a, int) or (isinstance(a, str) and a.isdigit()):
-                # Address(port)
-                s = str(a); cs = s
-                self._addr = lo_address_new(NULL, cs)
-                # assume this cannot fail
+        if addr2:
+            if proto:
+                # Address(host, port, proto)
+                s = str(addr2); cs = s
+                self._addr = lo_address_new_with_proto(proto, addr, cs)
+                if not self._addr:
+                    raise AddressError("invalid protocol")
             else:
-                # Address("url")
-                self._addr = lo_address_new_from_url(a)
+                # Address(host, port)
+                s = str(addr2); cs = s
+                self._addr = lo_address_new(addr, cs)
+        else:
+            if isinstance(addr, int) or (isinstance(addr, str) and addr.isdigit()):
+                # Address(port)
+                s = str(addr); cs = s
+                self._addr = lo_address_new(NULL, cs)
+            else:
+                # Address(url)
+                self._addr = lo_address_new_from_url(addr)
                 # lo_address_errno() is of no use if self._addr == NULL
                 if not self._addr:
-                    raise AddressError("invalid URL '%s'" % str(a))
+                    raise AddressError("invalid URL '%s'" % str(addr))
 
     def __dealloc__(self):
         lo_address_free(self._addr)
