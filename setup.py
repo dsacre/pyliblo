@@ -10,9 +10,13 @@ import os, sys
 if '--with-pyrex' in sys.argv:
     from Pyrex.Distutils import build_ext
     sys.argv.remove('--with-pyrex')
-    with_pyrex = True
+    compile_source = 'pyrex'
+elif '--with-cython' in sys.argv:
+    from Cython.Distutils import build_ext
+    sys.argv.remove('--with-cython')
+    compile_source = 'cython'
 else:
-    with_pyrex = False
+    compile_source = ''
 
 
 class build_scripts_rename(build_scripts):
@@ -34,7 +38,7 @@ cmdclass = {
 ext_modules = [
     Extension(
         'liblo',
-        [with_pyrex and 'src/liblo.pyx' or 'src/liblo.c'],
+        [compile_source and 'src/liblo.pyx' or 'src/liblo.c'],
         extra_compile_args = [
             '-fno-strict-aliasing',
             '-Werror-implicit-function-declaration',
@@ -43,7 +47,7 @@ ext_modules = [
     )
 ]
 
-if with_pyrex:
+if compile_source:
     cmdclass['build_ext'] = build_ext
 
 
