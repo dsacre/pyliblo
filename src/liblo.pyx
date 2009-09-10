@@ -529,13 +529,19 @@ cdef class _Blob:
         size = len(arr)
         if size < 1:
             raise ValueError("blob is empty")
-        # copy each element of arr to c array
+        # copy each element of arr to a C array
         p = <unsigned char*>malloc(size)
-        for i from 0 <= i < size:
-            p[i] = arr[i]
-        # build blob
-        self._blob = lo_blob_new(size, p)
-        free(p)
+        try:
+            if isinstance(arr[0], str):
+                for i from 0 <= i < size:
+                    p[i] = ord(arr[i])
+            else:
+                for i from 0 <= i < size:
+                    p[i] = arr[i]
+            # build blob
+            self._blob = lo_blob_new(size, p)
+        finally:
+            free(p)
 
     def __dealloc__(self):
         lo_blob_free(self._blob)
