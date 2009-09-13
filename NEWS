@@ -1,8 +1,9 @@
 2009-09-13: pyliblo 0.8.0
 
-  * Changed license from GPL 2 to LGPL 2.1 (as did liblo).
-  * Added protocol parameter to Server and Address classes. Among other
-    things, this now allows TCP connections.
+  * Changed license from GPL 2 to LGPL 2.1 (as did liblo in version 0.26).
+  * Added protocol parameter to the Server class. Among other things, this
+    allows TCP connections.
+  * The minumum version of liblo required by pyliblo is now 0.24.
   * pyliblo can now be built with either Pyrex or Cython.
 
 2009-01-19: pyliblo 0.7.2

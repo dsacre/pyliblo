@@ -475,17 +475,21 @@ class AddressError(Exception):
 cdef class Address:
     cdef lo_address _addr
 
-    def __init__(self, addr, addr2=None, proto=None):
+    #
+    # lo_address_new_with_proto() is not available in liblo < 0.26
+    #
+    def __init__(self, addr, addr2=None):
+#    def __init__(self, addr, addr2=None, proto=None):
         cdef char *cs
 
         if addr2:
-            if proto:
-                # Address(host, port, proto)
-                s = str(addr2); cs = s
-                self._addr = lo_address_new_with_proto(proto, addr, cs)
-                if not self._addr:
-                    raise AddressError("invalid protocol")
-            else:
+#            if proto:
+#                # Address(host, port, proto)
+#                s = str(addr2); cs = s
+#                self._addr = lo_address_new_with_proto(proto, addr, cs)
+#                if not self._addr:
+#                    raise AddressError("invalid protocol")
+#            else:
                 # Address(host, port)
                 s = str(addr2); cs = s
                 self._addr = lo_address_new(addr, cs)
