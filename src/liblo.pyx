@@ -135,14 +135,13 @@ cdef extern from 'lo/lo.h':
 
 import inspect as _inspect
 import weakref as _weakref
-import new as _new
 
 class _weakref_method:
     def __init__(self, f):
         self.f = f.im_func
         self.c = _weakref.ref(f.im_self)
-    def __call__(self, *args):
-        return _new.instancemethod(self.f, self.c(), self.c().__class__)
+    def __call__(self):
+        return self.f.__get__(self.c(), self.c().__class__)
 
 
 cdef class _ServerBase
