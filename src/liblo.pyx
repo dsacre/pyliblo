@@ -60,10 +60,10 @@ cdef extern from 'lo/lo.h':
         lo_timetag t
 
     cdef enum:
-        LO_DEFAULT  = 0x0
-        LO_UDP      = 0x1
-        LO_UNIX     = 0x2
-        LO_TCP      = 0x4
+        LO_DEFAULT
+        LO_UDP
+        LO_UNIX
+        LO_TCP
 
     ctypedef void(*lo_err_handler)(int num, const_char_ptr msg, const_char_ptr where)
     ctypedef int(*lo_method_handler)(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *user_data)
