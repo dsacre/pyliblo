@@ -9,7 +9,7 @@
 # License, or (at your option) any later version.
 #
 
-__version__ = '0.8.0'
+__version__ = '0.8.1'
 
 
 cdef extern from 'stdint.h':
@@ -31,9 +31,6 @@ cdef extern from 'math.h':
 
 cdef extern from 'Python.h':
     void PyEval_InitThreads()
-    ctypedef void *PyGILState_STATE
-    PyGILState_STATE PyGILState_Ensure()
-    void PyGILState_Release(PyGILState_STATE)
 
 cdef extern from 'lo/lo.h':
     # type definitions
@@ -79,8 +76,8 @@ cdef extern from 'lo/lo.h':
     int lo_server_get_port(lo_server s)
     int lo_server_get_protocol(lo_server s)
     lo_method lo_server_add_method(lo_server s, char *path, char *typespec, lo_method_handler h, void *user_data)
-    int lo_server_recv(lo_server s)
-    int lo_server_recv_noblock(lo_server s, int timeout)
+    int lo_server_recv(lo_server s) nogil
+    int lo_server_recv_noblock(lo_server s, int timeout) nogil
 
     # server thread
     lo_server_thread lo_server_thread_new_with_proto(char *port, int proto, lo_err_handler err_h)
@@ -233,7 +230,7 @@ class _CallbackData:
         self.data = data
 
 
-cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
+cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *cb_data) with gil:
     cdef unsigned char *ptr
     cdef uint32_t size, j
     cdef char *url
@@ -293,20 +290,8 @@ cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int
         return r
 
 
-cdef int _callback_threaded(const_char_ptr path, const_char_ptr types, lo_arg **argv, int argc, lo_message msg, void *cb_data):
-    cdef PyGILState_STATE gil
-
-    # acquire the global interpreter lock
-    gil = PyGILState_Ensure()
-    # call the regular callback function.
-    # this can't raise an exception, so it's safe to rely on the GIL to be released
-    _callback(path, types, argv, argc, msg, cb_data)
-    PyGILState_Release(gil)
-    return 0
-
-
 cdef void _err_handler(int num, const_char_ptr msg, const_char_ptr where):
-    # can't raise exception in cdef function, so use a global variable instead
+    # can't raise exception in cdef callback function, so use a global variable instead
     global __exception
     __exception = ServerError(num, msg, None)
     if where: __exception.where = where
@@ -335,7 +320,6 @@ class make_method:
 
 cdef class _ServerBase:
     cdef lo_server _serv
-    cdef lo_method_handler _cb_func
     cdef object _keep_refs
 
     def __init__(self, **kwargs):
@@ -391,7 +375,7 @@ cdef class _ServerBase:
 
         cb = _CallbackData(func, user_data)
         self._keep_refs.append(cb)
-        lo_server_add_method(self._serv, p, t, self._cb_func, <void*>cb)
+        lo_server_add_method(self._serv, p, t, _callback, <void*>cb)
 
     def send(self, target, *msg):
         _send(target, self, *msg)
@@ -412,18 +396,21 @@ cdef class Server(_ServerBase):
         if __exception:
             raise __exception
 
-        self._cb_func = _callback
         _ServerBase.__init__(self, **kwargs)
 
     def __dealloc__(self):
         lo_server_free(self._serv)
 
     def recv(self, timeout=None):
+        cdef int t, r
         if timeout != None:
-            r = lo_server_recv_noblock(self._serv, timeout)
+            t = timeout
+            with nogil:
+                r = lo_server_recv_noblock(self._serv, t)
             return r and True or False
         else:
-            lo_server_recv(self._serv)
+            with nogil:
+                lo_server_recv(self._serv)
             return True
 
 
@@ -448,7 +435,6 @@ cdef class ServerThread(_ServerBase):
             raise __exception
         self._serv = lo_server_thread_get_server(self._thread)
 
-        self._cb_func = _callback_threaded
         _ServerBase.__init__(self, **kwargs)
 
     def __dealloc__(self):

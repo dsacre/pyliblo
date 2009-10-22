@@ -1,3 +1,7 @@
+
+
+  * Release the Python GIL inside liblo.Server.recv().
+
 2009-09-13: pyliblo 0.8.0
 
   * Changed license from GPL 2 to LGPL 2.1 (as did liblo in version 0.26).

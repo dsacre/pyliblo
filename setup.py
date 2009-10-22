@@ -53,7 +53,7 @@ if compile_source:
 
 setup (
     name = 'pyliblo',
-    version = '0.8.0',
+    version = '0.8.1',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
