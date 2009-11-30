@@ -290,7 +290,7 @@ cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int
         return r
 
 
-cdef void _err_handler(int num, const_char_ptr msg, const_char_ptr where):
+cdef void _err_handler(int num, const_char_ptr msg, const_char_ptr where) with gil:
     # can't raise exception in cdef callback function, so use a global variable instead
     global __exception
     __exception = ServerError(num, msg, None)
