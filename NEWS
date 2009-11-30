@@ -1,6 +1,8 @@
+2009-11-30: pyliblo 0.8.1
 
-
-  * Release the Python GIL inside liblo.Server.recv().
+  * Release the Python GIL inside Server.recv().
+  * Fixed a possible segfault when the error handler was called from the
+  * liblo server thread.
 
 2009-09-13: pyliblo 0.8.0
 
