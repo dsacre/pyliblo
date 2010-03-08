@@ -1,7 +1,7 @@
 #
 # pyliblo - Python bindings for the liblo OSC library
 #
-# Copyright (C) 2007-2009  Dominic Sacré  <dominic.sacre@gmx.de>
+# Copyright (C) 2007-2010  Dominic Sacré  <dominic.sacre@gmx.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
@@ -380,6 +380,18 @@ cdef class _ServerBase:
     def send(self, target, *msg):
         _send(target, self, *msg)
 
+    property url:
+        def __get__(self):
+            return self.get_url()
+
+    property port:
+        def __get__(self):
+            return self.get_port()
+
+    property protocol:
+        def __get__(self):
+            return self.get_protocol()
+
 
 cdef class Server(_ServerBase):
     def __init__(self, port=None, proto=LO_DEFAULT, **kwargs):
@@ -520,6 +532,22 @@ cdef class Address:
 
     def get_protocol(self):
         return lo_address_get_protocol(self._addr)
+
+    property url:
+        def __get__(self):
+            return self.get_url()
+
+    property hostname:
+        def __get__(self):
+            return self.get_hostname()
+
+    property port:
+        def __get__(self):
+            return self.get_port()
+
+    property protocol:
+        def __get__(self):
+            return self.get_protocol()
 
 
 ################################################################################################
