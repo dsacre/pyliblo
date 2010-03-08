@@ -399,7 +399,12 @@ cdef class Server(_ServerBase):
         _ServerBase.__init__(self, **kwargs)
 
     def __dealloc__(self):
-        lo_server_free(self._serv)
+        self.free()
+
+    def free(self):
+        if self._serv:
+            lo_server_free(self._serv)
+            self._serv = NULL
 
     def recv(self, timeout=None):
         cdef int t, r
@@ -438,7 +443,13 @@ cdef class ServerThread(_ServerBase):
         _ServerBase.__init__(self, **kwargs)
 
     def __dealloc__(self):
-        lo_server_thread_free(self._thread)
+        self.free()
+
+    def free(self):
+        if self._thread:
+            lo_server_thread_free(self._thread)
+            self._thread = NULL
+            self._serv = NULL
 
     def start(self):
         lo_server_thread_start(self._thread)
