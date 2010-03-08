@@ -66,7 +66,7 @@ else:
 
 setup (
     name = 'pyliblo',
-    version = '0.8.1',
+    version = '0.9.0-pre1',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',

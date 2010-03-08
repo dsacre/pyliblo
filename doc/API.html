@@ -21,7 +21,7 @@
 
 <body>
 
-<h1>pyliblo 0.8 - API Documentation</h1>
+<h1>pyliblo 0.9 - API Documentation</h1>
 
 <p>
 For the most part, pyliblo is just a thin wrapper around liblo, which does all the real work.
@@ -119,21 +119,29 @@ target may be an <b>Address</b> object, a port number, a (hostname, port) tuple,
 Exceptions: <b>AddressError</b>
 </p>
 
-<h3>get_url()</h3>
+<h3>url<br>
+get_url() [deprecated]</h3>
 <p>
-Returns the server's URL.
+The server's URL.
 </p>
 
-<h3>get_port()</h3>
+<h3>port<br>
+get_port() [deprecated]</h3>
 <p>
-Returns the server's port number.
+The server's port number.
 </p>
 
-<h3>get_protocol()</h3>
+<h3>protocol<br>
+get_protocol() [deprecated]</h3>
 <p>
-Returns the server's protocol (one of the constants UDP, TCP, UNIX).
+The server's protocol (one of the constants UDP, TCP, UNIX).
 </p>
 
+<h3>free()</h3>
+<p>
+Frees the underlying server object and closes its port.
+Note that this will also happen automatically when the server is garbage-collected.
+</p>
 
 <h2>class ServerThread</h2>
 <p>
@@ -156,7 +164,7 @@ Stops the server thread.
 
 <h2>class Address</h2>
 
-<h3>Address(hostname, port)<br>
+<h3>Address(hostname, port[, proto])<br>
 Address(port)<br>
 Address(url)</h3>
 <p>
@@ -164,24 +172,28 @@ Creates a new <b>Address</b> object from the given hostname/port or URL.<br>
 Exceptions: <b>AddressError</b>
 </p>
 
-<h3>get_url()</h3>
+<h3>url<br>
+get_url() [deprecated]</h3>
 <p>
-Returns the address' URL.
+The address' URL.
 </p>
 
-<h3>get_hostname()</h3>
+<h3>hostname<br>
+get_hostname() [deprecated]</h3>
 <p>
-Returns the address' hostname.
+The address' hostname.
 </p>
 
-<h3>get_port()</h3>
+<h3>port<br>
+get_port() [deprecated]</h3>
 <p>
-Returns the address' port number.
+The address' port number.
 </p>
 
-<h3>get_protocol()</h3>
+<h3>protocol<br>
+get_protocol() [deprecated]</h3>
 <p>
-Returns the address' protocol (one of the constants UDP, TCP, UNIX).
+The address' protocol (one of the constants UDP, TCP, UNIX).
 </p>
 
 
@@ -223,7 +235,7 @@ Callback functions always receive their arguments according to the following tab
 <table border="1">
   <tr><th>typetag</th><th>OSC data type</th><th>Python data type</th></tr>
   <tr><td>'i'</td><td>int32</td><td>int</td></tr>
-  <tr><td>'h'</td><td>int64</td><td>long</td></tr>
+  <tr><td>'h'</td><td>int64</td><td>long (Python 2.x), int (Python 3.x)</td></tr>
   <tr><td>'f'</td><td>float</td><td>float</td></tr>
   <tr><td>'d'</td><td>double</td><td>float</td></tr>
   <tr><td>'c'</td><td>char</td><td>single-character string</td></tr>
@@ -235,7 +247,7 @@ Callback functions always receive their arguments according to the following tab
   <tr><td>'F'</td><td>false</td><td>-</td></tr>
   <tr><td>'N'</td><td>nil</td><td>-</td></tr>
   <tr><td>'I'</td><td>infinitum</td><td>-</td></tr>
-  <tr><td>'b'</td><td>blob</td><td>list of ints</td></tr>
+  <tr><td>'b'</td><td>blob</td><td>list of ints (Python 2.x), bytes (Python 3.x)</td></tr>
 </table>
 
 </body>
