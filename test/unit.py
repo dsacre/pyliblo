@@ -3,6 +3,7 @@
 import unittest
 import re
 import time
+import sys
 import liblo
 
 def approx(a, b, e = 0.0002):
@@ -63,11 +64,17 @@ class ServerTestCase(ServerTestCaseBase):
         self.server.add_method('/blob', 'b', self.callback)
         self.server.send('1234', '/blob', [4, 8, 15, 16, 23, 42])
         assert self.server.recv() == True
-        assert self.cb.args[0] == [4, 8, 15, 16, 23, 42]
+        if sys.hexversion < 0x03000000:
+            assert self.cb.args[0] == [4, 8, 15, 16, 23, 42]
+        else:
+            assert self.cb.args[0] == b'\x04\x08\x0f\x10\x17\x2a'
 
     def testSendVarious(self):
         self.server.add_method('/blah', 'ihfdscb', self.callback)
-        self.server.send(1234, '/blah', 123, 2**42, 123.456, 666.666, "hello", ('c', 'x'), (12, 34, 56))
+        if sys.hexversion < 0x03000000:
+            self.server.send(1234, '/blah', 123, 2**42, 123.456, 666.666, "hello", ('c', 'x'), (12, 34, 56))
+        else:
+            self.server.send(1234, '/blah', 123, ('h', 2**42), 123.456, 666.666, "hello", ('c', 'x'), (12, 34, 56))
         assert self.server.recv() == True
         assert self.cb.types == 'ihfdscb'
         assert len(self.cb.args) == len(self.cb.types)
@@ -77,7 +84,10 @@ class ServerTestCase(ServerTestCaseBase):
         assert approx(self.cb.args[3], 666.666)
         assert self.cb.args[4] == "hello"
         assert self.cb.args[5] == 'x'
-        assert self.cb.args[6] == [12, 34, 56]
+        if sys.hexversion < 0x03000000:
+            assert self.cb.args[6] == [12, 34, 56]
+        else:
+            assert self.cb.args[6] == b'\x0c\x22\x38'
 
     def testSendOthers(self):
         self.server.add_method('/blubb', 'tmSTFNI', self.callback)
@@ -118,18 +128,10 @@ class ServerTestCase(ServerTestCaseBase):
     def testSendInvalid(self):
         try:
             self.server.send(1234, '/blubb', ('x', 'y'))
-        except TypeError, e:
+        except TypeError as e:
             pass
         else:
             assert False
-
-#    def testSendBlobOutOfRange(self):
-#        try:
-#            self.server.send(1234, '/blubb', [123, 456, 789])
-#        except ValueError, e:
-#            pass
-#        else:
-#            assert False
 
     def testRecvTimeout(self):
         t1 = time.time()
@@ -148,7 +150,7 @@ class ServerCreationTestCase(unittest.TestCase):
     def testNoPermission(self):
         try:
             s = liblo.Server('22')
-        except liblo.ServerError, e:
+        except liblo.ServerError as e:
             pass
         else:
             assert False

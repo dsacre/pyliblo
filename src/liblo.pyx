@@ -9,17 +9,18 @@
 # License, or (at your option) any later version.
 #
 
-__version__ = '0.8.1'
+__version__ = '0.9.0'
 
+
+cdef extern from *:
+    cdef int PY_VERSION_HEX
+    ctypedef char * const_char_ptr 'const char *'
 
 cdef extern from 'stdint.h':
     ctypedef long int32_t
     ctypedef unsigned long uint32_t
     ctypedef long long int64_t
     ctypedef unsigned char uint8_t
-
-cdef extern from *:
-    ctypedef char * const_char_ptr 'const char *'
 
 cdef extern from 'stdlib.h':
     ctypedef unsigned size_t
@@ -135,10 +136,29 @@ import weakref as _weakref
 
 class _weakref_method:
     def __init__(self, f):
-        self.f = f.im_func
-        self.c = _weakref.ref(f.im_self)
+        if PY_VERSION_HEX >= 0x03000000:
+            self.f = f.__func__
+            self.c = _weakref.ref(f.__self__)
+        else:
+            self.f = f.im_func
+            self.c = _weakref.ref(f.im_self)
     def __call__(self):
         return self.f.__get__(self.c(), self.c().__class__)
+
+
+cdef str _decode(s):
+    # convert to standard string type, depending on python version
+    if PY_VERSION_HEX >= 0x03000000 and isinstance(s, bytes):
+        return s.decode()
+    else:
+        return s
+
+cdef bytes _encode(s):
+    # convert unicode to bytestring
+    if isinstance(s, unicode):
+        return s.encode()
+    else:
+        return s
 
 
 cdef class _ServerBase
@@ -243,8 +263,8 @@ cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int
         elif t == 'f': v = argv[i].f
         elif t == 'd': v = argv[i].d
         elif t == 'c': v = chr(argv[i].c)
-        elif t == 's': v = &argv[i].s
-        elif t == 'S': v = &argv[i].s
+        elif t == 's': v = _decode(&argv[i].s)
+        elif t == 'S': v = _decode(&argv[i].s)
         elif t == 'T': v = True
         elif t == 'F': v = False
         elif t == 'N': v = None
@@ -252,12 +272,15 @@ cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int
         elif t == 'm': v = (argv[i].m[0], argv[i].m[1], argv[i].m[2], argv[i].m[3])
         elif t == 't': v = _timetag_to_double(argv[i].t)
         elif t == 'b':
-            # convert binary data to python list
-            v = []
-            ptr = <unsigned char*>lo_blob_dataptr(argv[i])
-            size = lo_blob_datasize(argv[i])
-            for j from 0 <= j < size:
-                v.append(ptr[j])
+            if PY_VERSION_HEX >= 0x03000000:
+                v = bytes(<unsigned char*>lo_blob_dataptr(argv[i]))
+            else:
+                # convert binary data to python list
+                v = []
+                ptr = <unsigned char*>lo_blob_dataptr(argv[i])
+                size = lo_blob_datasize(argv[i])
+                for j from 0 <= j < size:
+                    v.append(ptr[j])
         else:
             v = None  # unhandled data type
 
@@ -272,7 +295,7 @@ cdef int _callback(const_char_ptr path, const_char_ptr types, lo_arg **argv, int
         func = cb.func()
     else:
         func = cb.func
-    func_args = (path, args, types, src, cb.data)
+    func_args = (_decode(path), args, _decode(types), src, cb.data)
 
     # call function
     if _inspect.getargspec(func)[1] == None:
@@ -320,12 +343,12 @@ class make_method:
 
 cdef class _ServerBase:
     cdef lo_server _serv
-    cdef object _keep_refs
+    cdef list _keep_refs
 
     def __init__(self, **kwargs):
         self._keep_refs = []
 
-        if not kwargs.has_key('reg_methods') or kwargs['reg_methods']:
+        if 'reg_methods' not in kwargs or kwargs['reg_methods']:
             self.register_methods()
 
     def register_methods(self, obj=None):
@@ -347,7 +370,7 @@ cdef class _ServerBase:
         tmp = lo_server_get_url(self._serv)
         r = tmp
         free(tmp)
-        return r
+        return _decode(r)
 
     def get_port(self):
         return lo_server_get_port(self._serv)
@@ -359,13 +382,21 @@ cdef class _ServerBase:
         cdef char *p
         cdef char *t
 
-        if isinstance(path, str): p = path
-        elif path == None:        p = NULL
-        else: raise TypeError("path must be a string or None")
+        if isinstance(path, (bytes, unicode)):
+            s = _encode(path)
+            p = s
+        elif path == None:
+            p = NULL
+        else:
+            raise TypeError("path must be a string or None")
 
-        if isinstance(typespec, str): t = typespec
-        elif typespec == None:        t = NULL
-        else: raise TypeError("typespec must be a string or None")
+        if isinstance(typespec, (bytes, unicode)):
+            s2 = _encode(typespec)
+            t = s2
+        elif typespec == None:
+            t = NULL
+        else:
+            raise TypeError("typespec must be a string or None")
 
         # use a weak reference if func is a method, to avoid circular references in
         # cases where func is a method an object that also has a reference to the server
@@ -398,7 +429,8 @@ cdef class Server(_ServerBase):
         cdef char *cs
 
         if port != None:
-            p = str(port); cs = p
+            p = _encode(str(port));
+            cs = p
         else:
             cs = NULL
 
@@ -438,7 +470,8 @@ cdef class ServerThread(_ServerBase):
         cdef char *cs
 
         if port != None:
-            p = str(port); cs = p
+            p = _encode(str(port));
+            cs = p
         else:
             cs = NULL
 
@@ -484,35 +517,25 @@ class AddressError(Exception):
 cdef class Address:
     cdef lo_address _addr
 
-    #
-    # lo_address_new_with_proto() is not available in liblo < 0.26
-    #
-    def __init__(self, addr, addr2=None):
-#    def __init__(self, addr, addr2=None, proto=None):
-        cdef char *cs
-
+    def __init__(self, addr, addr2=None, proto=LO_DEFAULT):
         if addr2:
-#            if proto:
-#                # Address(host, port, proto)
-#                s = str(addr2); cs = s
-#                self._addr = lo_address_new_with_proto(proto, addr, cs)
-#                if not self._addr:
-#                    raise AddressError("invalid protocol")
-#            else:
-                # Address(host, port)
-                s = str(addr2); cs = s
-                self._addr = lo_address_new(addr, cs)
+            # Address(host, port[, proto])
+            s = _encode(addr)
+            s2 = _encode(str(addr2))
+            self._addr = lo_address_new_with_proto(proto, s, s2)
+            if not self._addr:
+                raise AddressError("invalid protocol")
+        elif isinstance(addr, int) or (isinstance(addr, str) and addr.isdigit()):
+            # Address(port)
+            s = str(addr).encode()
+            self._addr = lo_address_new(NULL, s)
         else:
-            if isinstance(addr, int) or (isinstance(addr, str) and addr.isdigit()):
-                # Address(port)
-                s = str(addr); cs = s
-                self._addr = lo_address_new(NULL, cs)
-            else:
-                # Address(url)
-                self._addr = lo_address_new_from_url(addr)
-                # lo_address_errno() is of no use if self._addr == NULL
-                if not self._addr:
-                    raise AddressError("invalid URL '%s'" % str(addr))
+            # Address(url)
+            s = _encode(addr)
+            self._addr = lo_address_new_from_url(s)
+            # lo_address_errno() is of no use if self._addr == NULL
+            if not self._addr:
+                raise AddressError("invalid URL '%s'" % str(addr))
 
     def __dealloc__(self):
         lo_address_free(self._addr)
@@ -522,13 +545,17 @@ cdef class Address:
         tmp = lo_address_get_url(self._addr)
         r = tmp
         free(tmp)
-        return r
+        return _decode(r)
 
     def get_hostname(self):
-        return lo_address_get_hostname(self._addr)
+        return _decode(lo_address_get_hostname(self._addr))
 
     def get_port(self):
-        return lo_address_get_port(self._addr)
+        cdef bytes s = lo_address_get_port(self._addr)
+        if s.isdigit():
+            return int(s)
+        else:
+            return _decode(s)
 
     def get_protocol(self):
         return lo_address_get_protocol(self._addr)
@@ -567,7 +594,8 @@ cdef class _Blob:
         # copy each element of arr to a C array
         p = <unsigned char*>malloc(size)
         try:
-            if isinstance(arr[0], str):
+            if isinstance(arr[0], (str, unicode)):
+                # use ord() if arr is a string (but not bytes)
                 for i from 0 <= i < size:
                     p[i] = ord(arr[i])
             else:
@@ -583,13 +611,14 @@ cdef class _Blob:
 
 
 cdef class Message:
-    cdef object _path
+    cdef bytes _path
     cdef lo_message _msg
-    cdef object _keep_refs
+    cdef list _keep_refs
 
-    def __init__(self, char *path, *args):
+    def __init__(self, path, *args):
         self._keep_refs = []
-        self._path = path
+        # encode path to bytestring if necessary
+        self._path = _encode(path)
         self._msg = lo_message_new()
 
         self.add(*args)
@@ -599,7 +628,7 @@ cdef class Message:
 
     def add(self, *args):
         for arg in args:
-            if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], str) and len(arg[0]) == 1:
+            if isinstance(arg, tuple) and len(arg) <= 2 and isinstance(arg[0], (bytes, unicode)) and len(arg[0]) == 1:
                 # type explicitly specified
                 if len(arg) == 2:
                     self._add(arg[0], arg[1])
@@ -610,8 +639,10 @@ cdef class Message:
                 self._add_auto(arg)
 
     def _add(self, t, v):
-        cdef char *cs
         cdef uint8_t midi[4]
+
+        # accept both bytes and unicode as type specifier
+        t = _decode(t)
 
         if t == 'i':
             lo_message_add_int32(self._msg, int(v))
@@ -624,11 +655,11 @@ cdef class Message:
         elif t == 'c':
             lo_message_add_char(self._msg, ord(v))
         elif t == 's':
-            s = str(v); cs = s
-            lo_message_add_string(self._msg, cs)
+            s = _encode(v)
+            lo_message_add_string(self._msg, s)
         elif t == 'S':
-            s = str(v); cs = s
-            lo_message_add_symbol(self._msg, cs)
+            s = _encode(v)
+            lo_message_add_symbol(self._msg, s)
         elif t == 'T':
             lo_message_add_true(self._msg)
         elif t == 'F':
@@ -663,7 +694,7 @@ cdef class Message:
             self._add('h', arg)
         elif isinstance(arg, float):
             self._add('f', arg)
-        elif isinstance(arg, str):
+        elif isinstance(arg, (bytes, unicode)):
             self._add('s', arg)
         elif arg == None:
             self._add('N', None)
@@ -684,7 +715,7 @@ cdef class Message:
 
 cdef class Bundle:
     cdef lo_bundle _bundle
-    cdef object _keep_refs
+    cdef list _keep_refs
 
     def __init__(self, *msgs):
         cdef lo_timetag tt

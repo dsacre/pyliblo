@@ -7,11 +7,7 @@ from distutils import util, log
 import os, sys
 
 
-if '--with-pyrex' in sys.argv:
-    from Pyrex.Distutils import build_ext
-    sys.argv.remove('--with-pyrex')
-    compile_source = 'pyrex'
-elif '--with-cython' in sys.argv:
+if '--with-cython' in sys.argv:
     from Cython.Distutils import build_ext
     sys.argv.remove('--with-cython')
     compile_source = 'cython'
@@ -51,6 +47,23 @@ if compile_source:
     cmdclass['build_ext'] = build_ext
 
 
+if sys.hexversion < 0x03000000:
+    scripts = [
+        'scripts/send_osc.py',
+        'scripts/dump_osc.py',
+    ]
+    data_files = [
+        ('share/man/man1', [
+            'scripts/send_osc.1',
+            'scripts/dump_osc.1',
+        ]),
+    ]
+else:
+    # doesn't work with Python 3.x yet
+    scripts = []
+    data_files = []
+
+
 setup (
     name = 'pyliblo',
     version = '0.8.1',
@@ -59,16 +72,8 @@ setup (
     url = 'http://das.nasophon.de/pyliblo/',
     description = 'Python bindings for the liblo OSC library',
     license = 'LGPL',
-    scripts = [
-        'scripts/send_osc.py',
-        'scripts/dump_osc.py',
-    ],
-    data_files = [
-        ('share/man/man1', [
-            'scripts/send_osc.1',
-            'scripts/dump_osc.1',
-        ]),
-    ],
+    scripts = scripts,
+    data_files = data_files,
     cmdclass = cmdclass,
     ext_modules = ext_modules
 )
