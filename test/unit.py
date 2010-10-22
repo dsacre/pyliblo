@@ -9,6 +9,10 @@ import liblo
 def approx(a, b, e = 0.0002):
     return abs(a - b) < e
 
+def matchHost(host, regex):
+    r = re.compile(regex)
+    return r.match(host) != None
+
 
 class Arguments:
     def __init__(self, path, args, types, src, data):
@@ -40,15 +44,11 @@ class ServerTestCase(ServerTestCaseBase):
     def tearDown(self):
         del self.server
 
-    def matchHost(self, host):
-        r = re.compile("osc\.udp://.*:1234/")
-        return r.match(host) != None
-
     def testPort(self):
         assert self.server.get_port() == 1234
 
     def testURL(self):
-        assert self.matchHost(self.server.get_url())
+        assert matchHost(self.server.get_url(), 'osc\.udp://.*:1234/')
 
     def testSendInt(self):
         self.server.add_method('/foo', 'i', self.callback, "data")
@@ -58,7 +58,7 @@ class ServerTestCase(ServerTestCaseBase):
         assert self.cb.args[0] == 123
         assert self.cb.types == 'i'
         assert self.cb.data == "data"
-        assert self.matchHost(self.cb.src.get_url())
+        assert matchHost(self.cb.src.get_url(), 'osc\.udp://.*:1234/')
 
     def testSendBlob(self):
         self.server.add_method('/blob', 'b', self.callback)
@@ -159,6 +159,17 @@ class ServerCreationTestCase(unittest.TestCase):
         s = liblo.Server()
         assert 1024 <= s.get_port() <= 65535
 
+    def testPort(self):
+        s = liblo.Server(1234)
+        t = liblo.Server('5678')
+        assert s.port == 1234
+        assert t.port == 5678
+        assert matchHost(s.url, 'osc\.udp://.*:1234/')
+
+    def testPortProto(self):
+        s = liblo.Server(1234, liblo.TCP)
+        assert matchHost(s.url, 'osc\.tcp://.*:1234/')
+
 
 class ServerThreadTestCase(ServerTestCaseBase):
     def setUp(self):
@@ -199,6 +210,29 @@ class DecoratorTestCase(unittest.TestCase):
         assert len(self.server.cb.args) == 3
 
 
+class AddressTestCase(unittest.TestCase):
+    def testPort(self):
+        a = liblo.Address(1234)
+        b = liblo.Address('5678')
+        assert a.port == 1234
+        assert b.port == 5678
+        assert a.url == 'osc.udp://localhost:1234/'
+
+    def testUrl(self):
+        a = liblo.Address('osc.udp://foo:1234/')
+        assert a.url == 'osc.udp://foo:1234/'
+        assert a.hostname == 'foo'
+        assert a.port == 1234
+        assert a.protocol == liblo.UDP
+
+    def testHostPort(self):
+        a = liblo.Address('foo', 1234)
+        assert a.url == 'osc.udp://foo:1234/'
+
+    def testHostPortProto(self):
+        a = liblo.Address('foo', 1234, liblo.TCP)
+        assert a.url == 'osc.tcp://foo:1234/'
+
+
 if __name__ == "__main__":
     unittest.main()
-
