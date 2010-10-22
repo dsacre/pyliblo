@@ -1,10 +1,14 @@
-2010-03-08: pyliblo 0.9.0-pre1
+2010-10-22: pyliblo 0.9.0
 
   * Support Python 3.x. As a result, pyliblo can no longer be built with
     Pyrex, and requires Cython >= 0.12 instead.
   * Added free() method to Server and ServerThread classes.
-  * Replaced getter methods with read-only properties.
-  * The minumum version of liblo required by pyliblo is now 0.26.
+  * Added fileno() method to Server and ServerThread classes (thanks to
+    Edward George).
+  * Prefer read-only properties over getter methods (which still exist, but
+    are now deprecated).
+  * Added proper docstrings (copied from the HTML docs).
+  * The minimum version of liblo required by pyliblo is now 0.26.
 
 2009-11-30: pyliblo 0.8.1
 
