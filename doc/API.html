@@ -137,6 +137,11 @@ get_protocol() [deprecated]</h3>
 The server's protocol (one of the constants UDP, TCP, UNIX).
 </p>
 
+<h3>fileno()</h3>
+<p>
+Returns the file descriptor of the server socket, or -1 if not supported by the underlying server protocol.
+</p>
+
 <h3>free()</h3>
 <p>
 Frees the underlying server object and closes its port.
