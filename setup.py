@@ -38,6 +38,7 @@ ext_modules = [
         extra_compile_args = [
             '-fno-strict-aliasing',
             '-Werror-implicit-function-declaration',
+            '-Wfatal-errors',
         ],
         libraries = ['lo']
     )
