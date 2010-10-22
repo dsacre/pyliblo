@@ -58,7 +58,6 @@ cdef extern from 'lo/lo.h':
         lo_timetag t
 
     cdef enum:
-        LO_DEFAULT
         LO_UDP
         LO_UNIX
         LO_TCP
@@ -394,6 +393,7 @@ cdef class _ServerBase:
 
     def get_url(self):
         cdef char *tmp
+        cdef object r
         tmp = lo_server_get_url(self._serv)
         r = tmp
         free(tmp)
@@ -496,7 +496,7 @@ cdef class Server(_ServerBase):
     reg_methods: False if you don't want the init function to automatically register callbacks defined with the @make_method decorator.
     Exceptions: ServerError
     """
-    def __init__(self, port=None, proto=LO_DEFAULT, **kwargs):
+    def __init__(self, port=None, proto=LO_UDP, **kwargs):
         cdef char *cs
 
         if port != None:
@@ -559,7 +559,7 @@ cdef class ServerThread(_ServerBase):
     """
     cdef lo_server_thread _thread
 
-    def __init__(self, port=None, proto=LO_DEFAULT, **kwargs):
+    def __init__(self, port=None, proto=LO_UDP, **kwargs):
         cdef char *cs
 
         if port != None:
@@ -633,7 +633,7 @@ cdef class Address:
     """
     cdef lo_address _addr
 
-    def __init__(self, addr, addr2=None, proto=LO_DEFAULT):
+    def __init__(self, addr, addr2=None, proto=LO_UDP):
         if addr2:
             # Address(host, port[, proto])
             s = _encode(addr)
@@ -658,6 +658,7 @@ cdef class Address:
 
     def get_url(self):
         cdef char *tmp
+        cdef object r
         tmp = lo_address_get_url(self._addr)
         r = tmp
         free(tmp)
