@@ -174,6 +174,7 @@ Address(port)<br>
 Address(url)</h3>
 <p>
 Creates a new <b>Address</b> object from the given hostname/port or URL.<br>
+proto can be one of the constants UDP, TCP, UNIX.<br>
 Exceptions: <b>AddressError</b>
 </p>
 
@@ -228,6 +229,17 @@ add(path[, arg, ...])</h3>
 <p>
 Adds one or more messages to the bundle.
 </p>
+
+
+<h2>constants</h2>
+
+<h3>UDP<br>
+TCP<br>
+UNIX</h3>
+<p>
+Specifies the protocol of a server or address object.
+</p>
+
 
 <h2>mapping between OSC and Python data types</h2>
 <p>

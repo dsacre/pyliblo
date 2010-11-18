@@ -629,6 +629,7 @@ cdef class Address:
     Address(url)
 
     Creates a new Address object from the given hostname/port or URL.
+    proto can be one of the constants UDP, TCP, UNIX.
     Exceptions: AddressError
     """
     cdef lo_address _addr
