@@ -12,7 +12,7 @@
 __version__ = '0.10.0'
 
 
-from python cimport PY_VERSION_HEX
+from cpython cimport PY_VERSION_HEX
 cdef extern from 'Python.h':
     void PyEval_InitThreads()
 
@@ -94,8 +94,10 @@ def time():
 #  send
 ################################################################################################
 
-def _send(target, src, *msg):
+def _send(target, _ServerBase src, *msg):
     cdef lo_server serv
+    cdef Address addr
+    cdef int r
 
     if isinstance(target, Address):
         addr = target
@@ -110,15 +112,18 @@ def _send(target, src, *msg):
         msg = [Message(*msg)]
 
     if src:
-        serv = (<_ServerBase>src)._serv
+        serv = src._serv
     else:
         serv = NULL
 
     for m in msg:
         if isinstance(m, Message):
-            lo_send_message_from((<Address>addr)._addr, serv, (<Message>m)._path, (<Message>m)._msg)
+            r = lo_send_message_from(addr._addr, serv, (<Message>m)._path, (<Message>m)._msg)
         else:
-            lo_send_bundle_from((<Address>addr)._addr, serv, (<Bundle>m)._bundle)
+            r = lo_send_bundle_from(addr._addr, serv, (<Bundle>m)._bundle)
+
+        if r == -1:
+            raise IOError("sending failed: %s" % <char*>lo_address_errstr(addr._addr))
 
 
 def send(target, *msg):

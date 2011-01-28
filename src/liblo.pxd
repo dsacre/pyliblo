@@ -76,6 +76,7 @@ cdef extern from 'lo/lo.h':
     char *lo_address_get_hostname(lo_address a)
     char *lo_address_get_port(lo_address a)
     int lo_address_get_protocol(lo_address a)
+    const_char* lo_address_errstr(lo_address a)
 
     # message
     lo_message lo_message_new()
