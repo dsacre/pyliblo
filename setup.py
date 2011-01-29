@@ -10,9 +10,9 @@ import os, sys
 if '--with-cython' in sys.argv:
     from Cython.Distutils import build_ext
     sys.argv.remove('--with-cython')
-    compile_source = 'cython'
+    use_cython = True
 else:
-    compile_source = ''
+    use_cython = False
 
 
 class build_scripts_rename(build_scripts):
@@ -34,7 +34,7 @@ cmdclass = {
 ext_modules = [
     Extension(
         'liblo',
-        [compile_source and 'src/liblo.pyx' or 'src/liblo.c'],
+        [use_cython and 'src/liblo.pyx' or 'src/liblo.c'],
         extra_compile_args = [
             '-fno-strict-aliasing',
             '-Werror-implicit-function-declaration',
@@ -44,7 +44,7 @@ ext_modules = [
     )
 ]
 
-if compile_source:
+if use_cython:
     cmdclass['build_ext'] = build_ext
 
 
@@ -67,7 +67,7 @@ else:
 
 setup (
     name = 'pyliblo',
-    version = '0.9.0',
+    version = '0.10.0',
     author = 'Dominic Sacre',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',

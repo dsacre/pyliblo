@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# pyliblo - Python bindings for the liblo OSC library
+#
+# Copyright (C) 2007-2011  Dominic Sacré  <dominic.sacre@gmx.de>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
 
 import unittest
 import re
@@ -102,6 +113,15 @@ class ServerTestCase(ServerTestCaseBase):
         assert self.cb.args[5] == None
         assert self.cb.args[6] == float('inf')
 
+    def testSendMessage(self):
+        self.server.add_method('/blah', 'is', self.callback)
+        m = liblo.Message('/blah', 42, 'foo')
+        self.server.send(1234, m)
+        assert self.server.recv() == True
+        assert self.cb.types == 'is'
+        assert self.cb.args[0] == 42
+        assert self.cb.args[1] == 'foo'
+
     def testSendBundle(self):
         self.server.add_method('/foo', 'i', self.callback_dict)
         self.server.add_method('/bar', 's', self.callback_dict)
@@ -169,6 +189,31 @@ class ServerCreationTestCase(unittest.TestCase):
     def testPortProto(self):
         s = liblo.Server(1234, liblo.TCP)
         assert matchHost(s.url, 'osc\.tcp://.*:1234/')
+
+
+class ServerTCPTestCase(ServerTestCaseBase):
+    def setUp(self):
+        ServerTestCaseBase.setUp(self)
+        self.server = liblo.Server('1234', liblo.TCP)
+
+    def tearDown(self):
+        del self.server
+
+    def testSendReceive(self):
+        self.server.add_method('/foo', 'i', self.callback)
+        liblo.send(self.server.url, '/foo', 123)
+        assert self.server.recv() == True
+        assert self.cb.path == '/foo'
+        assert self.cb.args[0] == 123
+        assert self.cb.types == 'i'
+
+    def testNotReachable(self):
+        try:
+            self.server.send('osc.tcp://192.168.23.42:4711', '/foo', 23, 42)
+        except IOError:
+            pass
+        else:
+            assert False
 
 
 class ServerThreadTestCase(ServerTestCaseBase):

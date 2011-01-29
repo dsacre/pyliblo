@@ -21,7 +21,7 @@
 
 <body>
 
-<h1>pyliblo 0.9 - API Documentation</h1>
+<h1>pyliblo 0.10 - API Documentation</h1>
 
 <p>
 For the most part, pyliblo is just a thin wrapper around liblo, which does all the real work.
@@ -42,7 +42,7 @@ send(target, path[, arg, ...])</h3>
 <p>
 Sends a message or bundle to the the given target, without requiring a server.<br>
 target may be an <b>Address</b> object, a port number, a (hostname, port) tuple, or a URL.<br>
-Exceptions: <b>AddressError</b>
+Exceptions: <b>AddressError</b>, <b>IOError</b>
 </p>
 
 <h3>time()</h3>
@@ -76,8 +76,7 @@ callback_func may be a global function or a class method, pyliblo will know what
 
 <h3>@make_method(path, typespec[, user_data])</h3>
 <p>
-Decorator that basically serves the same purpose as add_method().
-Decorators require Python 2.4 or later.<br>
+Decorator that basically serves the same purpose as add_method().<br>
 Note that @make_method is defined at module scope, and not a member of class Server.
 </p>
 
@@ -116,23 +115,23 @@ send(target, path[, arg, ...])</h3>
 <p>
 Sends a message or bundle from this server to the the given target.<br>
 target may be an <b>Address</b> object, a port number, a (hostname, port) tuple, or a URL.<br>
-Exceptions: <b>AddressError</b>
+Exceptions: <b>AddressError</b>, <b>IOError</b>
 </p>
 
 <h3>url<br>
-get_url() [deprecated]</h3>
+get_url()</h3>
 <p>
 The server's URL.
 </p>
 
 <h3>port<br>
-get_port() [deprecated]</h3>
+get_port()</h3>
 <p>
 The server's port number.
 </p>
 
 <h3>protocol<br>
-get_protocol() [deprecated]</h3>
+get_protocol()</h3>
 <p>
 The server's protocol (one of the constants UDP, TCP, UNIX).
 </p>
@@ -179,25 +178,25 @@ Exceptions: <b>AddressError</b>
 </p>
 
 <h3>url<br>
-get_url() [deprecated]</h3>
+get_url()</h3>
 <p>
 The address' URL.
 </p>
 
 <h3>hostname<br>
-get_hostname() [deprecated]</h3>
+get_hostname()</h3>
 <p>
 The address' hostname.
 </p>
 
 <h3>port<br>
-get_port() [deprecated]</h3>
+get_port()</h3>
 <p>
 The address' port number.
 </p>
 
 <h3>protocol<br>
-get_protocol() [deprecated]</h3>
+get_protocol()</h3>
 <p>
 The address' protocol (one of the constants UDP, TCP, UNIX).
 </p>

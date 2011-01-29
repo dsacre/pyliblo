@@ -3,10 +3,12 @@ COPYING
 NEWS
 setup.py
 src/liblo.pyx
+src/liblo.pxd
 src/liblo.c
 scripts/dump_osc.py
 scripts/send_osc.py
 scripts/dump_osc.1
 scripts/send_osc.1
+test/unit.py
 doc/API.html
 doc/examples.html
