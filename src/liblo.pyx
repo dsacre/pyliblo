@@ -32,13 +32,13 @@ class _weakref_method:
     """
     def __init__(self, f):
         if PY_VERSION_HEX >= 0x03000000:
-            self.f = f.__func__
-            self.c = _weakref.ref(f.__self__)
+            self.func = f.__func__
+            self.obj = _weakref.ref(f.__self__)
         else:
-            self.f = f.im_func
-            self.c = _weakref.ref(f.im_self)
+            self.func = f.im_func
+            self.obj = _weakref.ref(f.im_self)
     def __call__(self):
-        return self.f.__get__(self.c(), self.c().__class__)
+        return self.func.__get__(self.obj(), self.obj().__class__)
 
 
 class struct:
@@ -434,7 +434,7 @@ cdef class Server(_ServerBase):
                  register callbacks defined with the @make_method decorator.
     Exceptions: ServerError
     """
-    def __init__(self, port=None, proto=LO_UDP, **kwargs):
+    def __init__(self, port=None, proto=LO_DEFAULT, **kwargs):
         cdef char *cs
 
         if port != None:
@@ -504,7 +504,7 @@ cdef class ServerThread(_ServerBase):
     """
     cdef lo_server_thread _server_thread
 
-    def __init__(self, port=None, proto=LO_UDP, **kwargs):
+    def __init__(self, port=None, proto=LO_DEFAULT, **kwargs):
         cdef char *cs
 
         if port != None:

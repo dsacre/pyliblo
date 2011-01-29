@@ -38,6 +38,7 @@ cdef extern from 'lo/lo.h':
         lo_timetag t
 
     cdef enum:
+        LO_DEFAULT
         LO_UDP
         LO_UNIX
         LO_TCP
