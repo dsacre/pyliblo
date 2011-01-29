@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2007-2009  Dominic Sacré  <dominic.sacre@gmx.de>
+# Copyright (C) 2007-2011  Dominic Sacré  <dominic.sacre@gmx.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,8 +12,9 @@
 import sys
 import liblo
 
-def send_osc_auto(port, path, *args):
-    m = liblo.Message(path)
+
+def make_message_auto(path, *args):
+    msg = liblo.Message(path)
 
     for a in args:
         try: v = int(a)
@@ -21,23 +22,23 @@ def send_osc_auto(port, path, *args):
             try: v = float(a)
             except ValueError:
                 v = a
-        m.add(v)
+        msg.add(v)
 
-    liblo.send(port, m)
+    return msg
 
 
-def send_osc_manual(port, path, types, *args):
+def make_message_manual(path, types, *args):
     if len(types) != len(args):
         sys.exit("length of type string doesn't match number of arguments")
 
-    m = liblo.Message(path)
+    msg = liblo.Message(path)
     try:
         for a, t in zip(args, types):
-            m.add((t, a))
+            msg.add((t, a))
     except Exception, e:
         sys.exit(str(e))
 
-    liblo.send(port, m)
+    return msg
 
 
 if __name__ == '__main__':
@@ -52,6 +53,13 @@ if __name__ == '__main__':
         sys.exit("please specify a message path")
 
     if len(sys.argv) > 3 and sys.argv[3].startswith(','):
-        send_osc_manual(sys.argv[1], sys.argv[2], sys.argv[3][1:], *sys.argv[4:])
+        msg = make_message_manual(sys.argv[2], sys.argv[3][1:], *sys.argv[4:])
     else:
-        send_osc_auto(*sys.argv[1:])
+        msg = make_message_auto(*sys.argv[2:])
+
+    try:
+        liblo.send(sys.argv[1], msg)
+    except IOError, e:
+        sys.exit(str(e))
+    else:
+        sys.exit(0)
