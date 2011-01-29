@@ -106,7 +106,7 @@ def time():
 #  send
 ################################################################################
 
-def _send(target, _ServerBase src, *args):
+cdef _send(target, _ServerBase src, args):
     cdef lo_server from_server
     cdef Address target_address
     cdef int r
@@ -160,7 +160,7 @@ def send(target, *args):
     tuple, or a URL.
     Exceptions: AddressError, IOError
     """
-    _send(target, None, *args)
+    _send(target, None, args)
 
 
 ################################################################################
@@ -184,13 +184,15 @@ class ServerError(Exception):
 
 cdef int _callback(const_char *path, const_char *types, lo_arg **argv, int argc,
                    lo_message msg, void *cb_data) with gil:
+    cdef int i
+    cdef char t
     cdef unsigned char *ptr
     cdef uint32_t size, j
-    cdef char *url
+
     args = []
 
     for i from 0 <= i < argc:
-        t = chr(types[i])
+        t = types[i]
         if   t == 'i': v = argv[i].i
         elif t == 'h': v = argv[i].h
         elif t == 'f': v = argv[i].f
@@ -219,7 +221,7 @@ cdef int _callback(const_char *path, const_char *types, lo_arg **argv, int argc,
 
         args.append(v)
 
-    url = lo_address_get_url(lo_message_get_source(msg))
+    cdef char *url = lo_address_get_url(lo_message_get_source(msg))
     src = Address(url)
     free(url)
 
@@ -326,10 +328,8 @@ cdef class _ServerBase:
             self.add_method(e.spec.path, e.spec.types, e.name, e.spec.user_data)
 
     def get_url(self):
-        cdef char *tmp
-        cdef object r
-        tmp = lo_server_get_url(self._server)
-        r = tmp
+        cdef char *tmp = lo_server_get_url(self._server)
+        cdef object r = tmp
         free(tmp)
         return _decode(r)
 
@@ -398,7 +398,7 @@ cdef class _ServerBase:
         tuple, or a URL.
         Exceptions: AddressError, IOError
         """
-        _send(target, self, *args)
+        _send(target, self, args)
 
     property url:
         """
@@ -608,10 +608,8 @@ cdef class Address:
         lo_address_free(self._address)
 
     def get_url(self):
-        cdef char *tmp
-        cdef object r
-        tmp = lo_address_get_url(self._address)
-        r = tmp
+        cdef char *tmp = lo_address_get_url(self._address)
+        cdef object r = tmp
         free(tmp)
         return _decode(r)
 
@@ -729,27 +727,27 @@ cdef class Message:
                 # detect type automatically
                 self._add_auto(arg)
 
-    def _add(self, t, v):
+    cdef _add(self, type, value):
         cdef uint8_t midi[4]
 
         # accept both bytes and unicode as type specifier
-        t = _decode(t)
+        cdef char t = ord(_decode(type)[0])
 
         if t == 'i':
-            lo_message_add_int32(self._message, int(v))
+            lo_message_add_int32(self._message, int(value))
         elif t == 'h':
-            lo_message_add_int64(self._message, long(v))
+            lo_message_add_int64(self._message, long(value))
         elif t == 'f':
-            lo_message_add_float(self._message, float(v))
+            lo_message_add_float(self._message, float(value))
         elif t == 'd':
-            lo_message_add_double(self._message, float(v))
+            lo_message_add_double(self._message, float(value))
         elif t == 'c':
-            lo_message_add_char(self._message, ord(v))
+            lo_message_add_char(self._message, ord(value))
         elif t == 's':
-            s = _encode(v)
+            s = _encode(value)
             lo_message_add_string(self._message, s)
         elif t == 'S':
-            s = _encode(v)
+            s = _encode(value)
             lo_message_add_symbol(self._message, s)
         elif t == 'T':
             lo_message_add_true(self._message)
@@ -761,43 +759,44 @@ cdef class Message:
             lo_message_add_infinitum(self._message)
         elif t == 'm':
             for n from 0 <= n < 4:
-                midi[n] = v[n]
+                midi[n] = value[n]
             lo_message_add_midi(self._message, midi)
         elif t == 't':
-            lo_message_add_timetag(self._message, _double_to_timetag(v))
+            lo_message_add_timetag(self._message, _double_to_timetag(value))
         elif t == 'b':
-            b = _Blob(v)
+            b = _Blob(value)
             # make sure the blob is not deleted as long as this message exists
             self._keep_refs.append(b)
             lo_message_add_blob(self._message, (<_Blob>b)._blob)
         else:
-            raise TypeError("unknown OSC data type '%s'" % str(t))
+            raise TypeError("unknown OSC data type '%c'" % t)
 
-    def _add_auto(self, arg):
+    cdef _add_auto(self, value):
         # bool is a subclass of int, so check those first
-        if arg is True:
-            self._add('T', None)
-        elif arg is False:
-            self._add('F', None)
-        elif isinstance(arg, int):
-            self._add('i', arg)
-        elif isinstance(arg, long):
-            self._add('h', arg)
-        elif isinstance(arg, float):
-            self._add('f', arg)
-        elif isinstance(arg, (bytes, unicode)):
-            self._add('s', arg)
-        elif arg == None:
-            self._add('N', None)
-        elif arg == float('inf'):
-            self._add('I', None)
+        if value is True:
+            lo_message_add_true(self._message)
+        elif value is False:
+            lo_message_add_false(self._message)
+        elif isinstance(value, int):
+            lo_message_add_int32(self._message, int(value))
+        elif isinstance(value, long):
+            lo_message_add_int64(self._message, long(value))
+        elif isinstance(value, float):
+            lo_message_add_float(self._message, float(value))
+        elif isinstance(value, (bytes, unicode)):
+            s = _encode(value)
+            lo_message_add_string(self._message, s)
+        elif value == None:
+            lo_message_add_nil(self._message)
+        elif value == float('inf'):
+            lo_message_add_infinitum(self._message)
         else:
             # last chance: could be a blob
             try:
-                iter(arg)
+                iter(value)
             except TypeError:
                 raise TypeError("unsupported message argument type")
-            self._add('b', arg)
+            self._add('b', value)
 
 
 ################################################################################
@@ -815,13 +814,13 @@ cdef class Bundle:
     cdef lo_bundle _bundle
     cdef list _keep_refs
 
-    def __init__(self, *msgs):
+    def __init__(self, *messages):
         cdef lo_timetag tt
         tt.sec, tt.frac = 0, 0
         self._keep_refs = []
 
-        if len(msgs) and not isinstance(msgs[0], Message):
-            t = msgs[0]
+        if len(messages) and not isinstance(messages[0], Message):
+            t = messages[0]
             if isinstance(t, (float, int, long)):
                 tt = _double_to_timetag(t)
             elif isinstance(t, tuple) and len(t) == 2:
@@ -829,11 +828,11 @@ cdef class Bundle:
             else:
                 raise TypeError("invalid timetag")
             # first argument was timetag, so continue with second
-            msgs = msgs[1:]
+            messages = messages[1:]
 
         self._bundle = lo_bundle_new(tt)
-        if len(msgs):
-            self.add(*msgs)
+        if len(messages):
+            self.add(*messages)
 
     def __dealloc__(self):
         lo_bundle_free(self._bundle)
