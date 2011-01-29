@@ -9,7 +9,7 @@
 # License, or (at your option) any later version.
 #
 
-__version__ = '0.10.0'
+__version__ = '0.9.1'
 
 
 from cpython cimport PY_VERSION_HEX
