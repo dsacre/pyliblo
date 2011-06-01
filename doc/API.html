@@ -74,6 +74,11 @@ The optional user_data will be passed on to the callback function.
 callback_func may be a global function or a class method, pyliblo will know what to do either way.
 </p>
 
+<h3>del_method(path, typespec)</h3>
+<p>
+Deletes a callback function. For both path and typespec, None may be used as a wildcard.
+</p>
+
 <h3>@make_method(path, typespec[, user_data])</h3>
 <p>
 Decorator that basically serves the same purpose as add_method().<br>

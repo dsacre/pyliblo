@@ -387,6 +387,34 @@ cdef class _ServerBase:
         self._keep_refs.append(cb)
         lo_server_add_method(self._server, p, t, _callback, <void*>cb)
 
+    def del_method(self, path, typespec):
+        """
+        del_method(path, typespec)
+
+        Deletes a callback function.  For both path and typespec, None may be
+        used as a wildcard.
+        """
+        cdef char *p
+        cdef char *t
+
+        if isinstance(path, (bytes, unicode)):
+            s = _encode(path)
+            p = s
+        elif path == None:
+            p = NULL
+        else:
+            raise TypeError("path must be a string or None")
+
+        if isinstance(typespec, (bytes, unicode)):
+            s2 = _encode(typespec)
+            t = s2
+        elif typespec == None:
+            t = NULL
+        else:
+            raise TypeError("typespec must be a string or None")
+
+        lo_server_del_method(self._server, p, t)
+
     def send(self, target, *args):
         """
         send(target, message)
