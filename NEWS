@@ -1,6 +1,6 @@
 2011-01-29: pyliblo 0.9.1
 
-  * Changed send functions to raise an IOError if sending failed (probaby
+  * Changed send functions to raise an IOError if sending failed (probably
     most useful with TCP connections).
   * Lots of code cleanup and deobfuscation.
   * Included unit tests in release tarball.
