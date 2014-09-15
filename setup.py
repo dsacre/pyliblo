@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from distutils.core import setup, Extension
+import os
+import sys
+
 from distutils.command.build_scripts import build_scripts
 from distutils import util, log
-import os, sys
+
+try:
+    from setuptools import setup, Extension
+except ImportError:
+    from distutils.core import setup, Extension
 
 
 if '--with-cython' in sys.argv:
@@ -65,7 +71,7 @@ else:
     data_files = []
 
 
-setup (
+setup(
     name = 'pyliblo',
     version = '0.9.1',
     author = 'Dominic Sacre',
