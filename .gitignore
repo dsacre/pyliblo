@@ -1,2 +1,5 @@
 /build
+/dist
 /src/liblo.c
+pyliblo.egg-info
+wheel-*.egg
