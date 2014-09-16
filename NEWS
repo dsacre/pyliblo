@@ -1,3 +1,10 @@
+2014-09-16: pyliblo 0.9.2
+
+  * Add function Server.del_method(), thanks to a patch from Артём Попов.
+  * Use Python 3 compatible syntax in the send_osc and dump_osc scripts.
+    This also means that 2.6 is now the minimum supported Python version.
+  * Use setuptools if available, thanks to Chris Arndt.
+
 2011-01-29: pyliblo 0.9.1
 
   * Changed send functions to raise an IOError if sending failed (probably
