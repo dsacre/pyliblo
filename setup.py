@@ -73,8 +73,8 @@ else:
 
 setup(
     name = 'pyliblo',
-    version = '0.9.1',
-    author = 'Dominic Sacre',
+    version = '0.9.2',
+    author = 'Dominic Sacré',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
     description = 'Python bindings for the liblo OSC library',
