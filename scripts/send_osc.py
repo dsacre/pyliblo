@@ -37,7 +37,7 @@ def make_message_manual(path, types, *args):
     try:
         for a, t in zip(args, types):
             msg.add((t, a))
-    except Exception, e:
+    except Exception as e:
         sys.exit(str(e))
 
     return msg
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     try:
         liblo.send(sys.argv[1], msg)
-    except IOError, e:
+    except IOError as e:
         sys.exit(str(e))
     else:
         sys.exit(0)

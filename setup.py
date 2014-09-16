@@ -54,23 +54,6 @@ if use_cython:
     cmdclass['build_ext'] = build_ext
 
 
-if sys.hexversion < 0x03000000:
-    scripts = [
-        'scripts/send_osc.py',
-        'scripts/dump_osc.py',
-    ]
-    data_files = [
-        ('share/man/man1', [
-            'scripts/send_osc.1',
-            'scripts/dump_osc.1',
-        ]),
-    ]
-else:
-    # doesn't work with Python 3.x yet
-    scripts = []
-    data_files = []
-
-
 setup(
     name = 'pyliblo',
     version = '0.9.2',
@@ -79,8 +62,16 @@ setup(
     url = 'http://das.nasophon.de/pyliblo/',
     description = 'Python bindings for the liblo OSC library',
     license = 'LGPL',
-    scripts = scripts,
-    data_files = data_files,
+    scripts = [
+        'scripts/send_osc.py',
+        'scripts/dump_osc.py',
+    ],
+    data_files = [
+        ('share/man/man1', [
+            'scripts/send_osc.1',
+            'scripts/dump_osc.1',
+        ]),
+    ],
     cmdclass = cmdclass,
     ext_modules = ext_modules
 )
