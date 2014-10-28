@@ -165,6 +165,11 @@ class ServerTestCase(ServerTestCaseBase):
         t2 = time.time()
         assert t2 - t1 < 0.01
 
+    def testMethodAfterFree(self):
+        self.server.free()
+        with self.assertRaises(RuntimeError):
+            self.server.recv()
+
 
 class ServerCreationTestCase(unittest.TestCase):
     def testNoPermission(self):

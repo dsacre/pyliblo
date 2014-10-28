@@ -305,6 +305,10 @@ cdef class _ServerBase:
         if 'reg_methods' not in kwargs or kwargs['reg_methods']:
             self.register_methods()
 
+    cdef _check(self):
+        if self._server == NULL:
+            raise RuntimeError("Server method called after free()")
+
     def register_methods(self, obj=None):
         """
         register_methods([obj])
@@ -328,15 +332,18 @@ cdef class _ServerBase:
             self.add_method(e.spec.path, e.spec.types, e.name, e.spec.user_data)
 
     def get_url(self):
+        self._check()
         cdef char *tmp = lo_server_get_url(self._server)
         cdef object r = tmp
         free(tmp)
         return _decode(r)
 
     def get_port(self):
+        self._check()
         return lo_server_get_port(self._server)
 
     def get_protocol(self):
+        self._check()
         return lo_server_get_protocol(self._server)
 
     def fileno(self):
@@ -346,6 +353,7 @@ cdef class _ServerBase:
         Returns the file descriptor of the server socket, or -1 if not supported
         by the underlying server protocol.
         """
+        self._check()
         return lo_server_get_socket_fd(self._server)
 
     def add_method(self, path, typespec, func, user_data=None):
@@ -376,6 +384,8 @@ cdef class _ServerBase:
             t = NULL
         else:
             raise TypeError("typespec must be a string or None")
+
+        self._check()
 
         # use a weak reference if func is a method, to avoid circular references
         # in cases where func is a method an object that also has a reference to
@@ -413,6 +423,7 @@ cdef class _ServerBase:
         else:
             raise TypeError("typespec must be a string or None")
 
+        self._check()
         lo_server_del_method(self._server, p, t)
 
     def send(self, target, *args):
@@ -426,6 +437,7 @@ cdef class _ServerBase:
         tuple, or a URL.
         Exceptions: AddressError, IOError
         """
+        self._check()
         _send(target, self, args)
 
     property url:
@@ -503,6 +515,7 @@ cdef class Server(_ServerBase):
         otherwise.
         """
         cdef int t, r
+        self._check()
         if timeout != None:
             t = timeout
             with nogil:
@@ -575,6 +588,7 @@ cdef class ServerThread(_ServerBase):
         Starts the server thread, liblo will now start to dispatch any messages
         it receives.
         """
+        self._check()
         lo_server_thread_start(self._server_thread)
 
     def stop(self):
@@ -583,6 +597,7 @@ cdef class ServerThread(_ServerBase):
 
         Stops the server thread.
         """
+        self._check()
         lo_server_thread_stop(self._server_thread)
 
 
