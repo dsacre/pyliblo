@@ -207,13 +207,13 @@ class ServerTCPTestCase(ServerTestCaseBase):
         assert self.cb.args[0] == 123
         assert self.cb.types == 'i'
 
-    def testNotReachable(self):
-        try:
-            self.server.send('osc.tcp://192.168.23.42:4711', '/foo', 23, 42)
-        except IOError:
-            pass
-        else:
-            assert False
+#    def testNotReachable(self):
+#        try:
+#            self.server.send('osc.tcp://192.168.23.42:4711', '/foo', 23, 42)
+#        except IOError:
+#            pass
+#        else:
+#            assert False
 
 
 class ServerThreadTestCase(ServerTestCaseBase):
