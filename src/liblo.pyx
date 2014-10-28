@@ -20,6 +20,8 @@ from libc.stdlib cimport malloc, free
 cdef extern from 'math.h':
     double modf(double x, double *iptr)
 
+from libc.stdint cimport int32_t, int64_t
+
 from liblo cimport *
 
 import inspect as _inspect
@@ -820,10 +822,11 @@ cdef class Message:
             lo_message_add_true(self._message)
         elif value is False:
             lo_message_add_false(self._message)
-        elif isinstance(value, int):
-            lo_message_add_int32(self._message, int(value))
-        elif isinstance(value, long):
-            lo_message_add_int64(self._message, long(value))
+        elif isinstance(value, (int, long)):
+            try:
+                lo_message_add_int32(self._message, <int32_t>value)
+            except OverflowError:
+                lo_message_add_int64(self._message, <int64_t>value)
         elif isinstance(value, float):
             lo_message_add_float(self._message, float(value))
         elif isinstance(value, (bytes, unicode)):
