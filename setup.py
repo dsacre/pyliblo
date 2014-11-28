@@ -73,5 +73,6 @@ setup(
         ]),
     ],
     cmdclass = cmdclass,
-    ext_modules = ext_modules
+    ext_modules = ext_modules,
+    zip_safe = False,
 )
