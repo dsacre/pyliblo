@@ -56,7 +56,7 @@ if use_cython:
 
 setup(
     name = 'pyliblo',
-    version = '0.9.2',
+    version = '0.10.0',
     author = 'Dominic Sacré',
     author_email = 'dominic.sacre@gmx.de',
     url = 'http://das.nasophon.de/pyliblo/',
