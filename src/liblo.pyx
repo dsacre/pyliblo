@@ -193,8 +193,8 @@ class ServerError(Exception):
         return s
 
 
-cdef int _callback(const_char *path, const_char *types, lo_arg **argv, int argc,
-                   lo_message msg, void *cb_data) with gil:
+cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv, int argc,
+                       lo_message msg, void *cb_data) with gil:
     cdef int i
     cdef char t
     cdef unsigned char *ptr
@@ -260,6 +260,34 @@ cdef int _callback(const_char *path, const_char *types, lo_arg **argv, int argc,
         # function has argument list, pass all arguments
         r = func(*func_args)
 
+    if r == None:
+        return 0
+    else:
+        return r
+
+
+cdef int _bundle_start_callback(lo_timetag t, void *cb_data) with gil:
+    cb = <object>cb_data
+
+    if isinstance(cb.start_func, _weakref_method):
+        func = cb.start_func()
+    else:
+        func = cb.start_func
+    r = func(_timetag_to_double(t), cb.user_data)
+    if r == None:
+        return 0
+    else:
+        return r
+
+
+cdef int _bundle_end_callback(void *cb_data) with gil:
+    cb = <object>cb_data
+
+    if isinstance(cb.end_func, _weakref_method):
+        func = cb.end_func()
+    else:
+        func = cb.end_func
+    r = func(cb.user_data)
     if r == None:
         return 0
     else:
@@ -437,7 +465,7 @@ cdef class _ServerBase:
 
         cb = struct(func=func, user_data=user_data)
         self._keep_refs.append(cb)
-        lo_server_add_method(self._server, p, t, _callback, <void*>cb)
+        lo_server_add_method(self._server, p, t, _msg_callback, <void*>cb)
 
     def del_method(self, path, typespec):
         """
@@ -469,6 +497,37 @@ cdef class _ServerBase:
 
         self._check()
         lo_server_del_method(self._server, p, t)
+
+    def add_bundle_handlers(self, start_handler, end_handler, user_data=None):
+        """
+        add_bundle_handlers(start_handler, end_handler, user_data=None)
+
+        Add bundle notification handlers.
+
+        :param start_handler:
+            a callback which fires when at the start of a bundle. This is
+            called with the bundle's timestamp and user_data.
+        :param end_handler:
+            a callback which fires when at the end of a bundle. This is called
+            with user_data.
+        :param user_data:
+            data to pass to the handlers.
+
+        .. versionadded:: 0.9.3
+        """
+        # use a weak reference if func is a method, to avoid circular references
+        # in cases where func is a method an object that also has a reference to
+        # the server (e.g. when deriving from the Server class)
+        if _inspect.ismethod(start_handler):
+            start_handler = _weakref_method(start_handler)
+        if _inspect.ismethod(end_handler):
+            end_handler = _weakref_method(end_handler)
+
+        cb_data = struct(
+            start_func=start_handler, end_func=end_handler, user_data=user_data)
+        return lo_server_add_bundle_handlers(
+            self._server, _bundle_start_callback, _bundle_end_callback,
+            <void*>cb_data)
 
     def send(self, target, *args):
         """
