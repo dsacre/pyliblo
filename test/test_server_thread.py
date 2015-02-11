@@ -36,7 +36,11 @@ st.add_method('/baz', 'b', b.baz_cb, 456)
 st.start()
 
 liblo.send(st.get_port(), "/foo", 123, 456.789, "buh!")
-liblo.send(st.get_port(), "/bar", 1234567890123456L, 666, ('c', "x"))
+try:
+    l = long(1234567890123456)
+except NameError:  # python3 does not have a long type
+    l = 1234567890123456
+liblo.send(st.get_port(), "/bar", l, 666, ('c', "x"))
 
 time.sleep(1)
 st.stop()
