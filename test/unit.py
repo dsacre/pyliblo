@@ -122,6 +122,18 @@ class ServerTestCase(ServerTestCaseBase):
         assert self.cb.args[0] == 42
         assert self.cb.args[1] == 'foo'
 
+    def testSendLong(self):
+        try:  # Python2
+            l = long(1234567890123456)
+        except NameError:  # Python3
+            l = 1234567890123456
+        self.server.add_method('/long', 'h', self.callback)
+        m = liblo.Message('/long', l)
+        self.server.send(1234, m)
+        self.assertTrue(self.server.recv())
+        self.assertEqual(self.cb.types, 'h')
+        self.assertEqual(self.cb.args[0], l)
+
     def testSendBundle(self):
         self.server.add_method('/foo', 'i', self.callback_dict)
         self.server.add_method('/bar', 's', self.callback_dict)
