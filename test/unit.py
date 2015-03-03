@@ -171,7 +171,8 @@ class ServerTestCase(ServerTestCaseBase):
             self.server.recv()
 
     def testBundleCallbacksFire(self):
-        def bundle_start_cb(user_data):
+        def bundle_start_cb(timestamp, user_data):
+            self.assertIsInstance(timestamp, float)
             user_data.append('start')
         def bundle_end_cb(user_data):
             user_data.append('end')

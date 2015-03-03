@@ -280,12 +280,12 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv, int a
 
 cdef int _bundle_start_callback(lo_timetag t, void *cb_data) with gil:
     cb = <object>cb_data
-    return cb.func(_timetag_to_double(t), cb.user_data)
+    return cb.start_func(_timetag_to_double(t), cb.user_data)
 
 
 cdef int _bundle_end_callback(void *cb_data) with gil:
     cb = <object>cb_data
-    return cb.func(cb.user_data)
+    return cb.end_func(cb.user_data)
 
 
 cdef void _err_handler(int num, const_char *msg, const_char *where) with gil:
@@ -506,6 +506,7 @@ cdef class _ServerBase:
         cb_data = struct(
             start_func=_weakref_method(start_handler),
             end_func=_weakref_method(end_handler), user_data=user_data)
+        self._keep_refs.append(cb_data)
         return lo_server_add_bundle_handlers(
             self._server, _bundle_start_callback, _bundle_end_callback,
             <void*>cb_data)
