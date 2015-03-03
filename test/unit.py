@@ -170,6 +170,16 @@ class ServerTestCase(ServerTestCaseBase):
         with self.assertRaises(RuntimeError):
             self.server.recv()
 
+    def testBundleCallbacksFire(self):
+        def bundle_start_cb(user_data):
+            user_data.append('start')
+        def bundle_end_cb(user_data):
+            user_data.append('end')
+        bundle_data = []
+        self.server.add_bundle_handlers(bundle_start_cb, bundle_end_cb, bundle_data)
+        self.testSendBundle()
+        self.assertEqual(bundle_data, ['start', 'end'])
+
 
 class ServerCreationTestCase(unittest.TestCase):
     def testNoPermission(self):
