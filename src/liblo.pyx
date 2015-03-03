@@ -886,10 +886,7 @@ cdef class Message:
         cdef char t = ord(_decode(type)[0])
 
         if t == 'i':
-            try:
-                lo_message_add_int32(self._message, int(value))
-            except OverflowError:  #  No long type in python3
-                lo_message_add_int64(self._message, long(value))
+            lo_message_add_int32(self._message, int(value))
         elif t == 'h':
             lo_message_add_int64(self._message, long(value))
         elif t == 'f':

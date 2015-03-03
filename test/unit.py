@@ -131,6 +131,11 @@ class ServerTestCase(ServerTestCaseBase):
         self.assertEqual(self.cb.types, 'h')
         self.assertEqual(self.cb.args[0], l)
 
+    def testSendingLongAsIntOverflows(self):
+        l = 1234567890123456
+        with self.assertRaises(OverflowError):
+            liblo.Message('/long', (l, 'i'))
+
     def testSendBundle(self):
         self.server.add_method('/foo', 'i', self.callback_dict)
         self.server.add_method('/bar', 's', self.callback_dict)
