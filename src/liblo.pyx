@@ -32,15 +32,36 @@ class _weakref_method:
     """
     Weak reference to a bound method.
     """
+    __slots__ = ('_func', 'obj')
     def __init__(self, f):
-        if PY_VERSION_HEX >= 0x03000000:
-            self.func = f.__func__
-            self.obj = _weakref.ref(f.__self__)
+        if _inspect.ismethod(f):
+            # use a weak reference if func is a method, to avoid circular
+            # references in cases where func is a method an object that also
+            # has a reference to the server (e.g. when deriving from the Server
+            # class)
+            if PY_VERSION_HEX >= 0x03000000:
+                self._func = f.__func__
+                self.obj = _weakref.ref(f.__self__)
+            else:
+                self._func = f.im_func
+                self.obj = _weakref.ref(f.im_self)
         else:
-            self.func = f.im_func
-            self.obj = _weakref.ref(f.im_self)
-    def __call__(self):
-        return self.func.__get__(self.obj(), self.obj().__class__)
+            self._func = f
+            self.obj = None
+
+    @property
+    def func(self):
+        if self.obj:
+            return self._func.__get__(self.obj(), self.obj().__class__)
+        else:
+            return self._func
+
+    def __call__(self, *args, **kwargs):
+        r = self.func(*args, **kwargs)
+        if r == None:
+            return 0
+        else:
+            return r
 
 
 class struct:
@@ -193,8 +214,8 @@ class ServerError(Exception):
         return s
 
 
-cdef int _callback(const_char *path, const_char *types, lo_arg **argv, int argc,
-                   lo_message msg, void *cb_data) with gil:
+cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv, int argc,
+                       lo_message msg, void *cb_data) with gil:
     cdef int i
     cdef char t
     cdef unsigned char *ptr
@@ -237,11 +258,7 @@ cdef int _callback(const_char *path, const_char *types, lo_arg **argv, int argc,
     free(url)
 
     cb = <object>cb_data
-
-    if isinstance(cb.func, _weakref_method):
-        func = cb.func()
-    else:
-        func = cb.func
+    func = cb.func.func
 
     func_args = (_decode(<char*>path),
                  args,
@@ -255,15 +272,20 @@ cdef int _callback(const_char *path, const_char *types, lo_arg **argv, int argc,
         n = len(_inspect.getargspec(func)[0])
         if _inspect.ismethod(func):
             n -= 1  # self doesn't count
-        r = func(*func_args[0:n])
+        return cb.func(*func_args[0:n])
     else:
         # function has argument list, pass all arguments
-        r = func(*func_args)
+        return cb.func(*func_args)
 
-    if r == None:
-        return 0
-    else:
-        return r
+
+cdef int _bundle_start_callback(lo_timetag t, void *cb_data) with gil:
+    cb = <object>cb_data
+    return cb.start_func(_timetag_to_double(t), cb.user_data)
+
+
+cdef int _bundle_end_callback(void *cb_data) with gil:
+    cb = <object>cb_data
+    return cb.end_func(cb.user_data)
 
 
 cdef void _err_handler(int num, const_char *msg, const_char *where) with gil:
@@ -429,15 +451,9 @@ cdef class _ServerBase:
 
         self._check()
 
-        # use a weak reference if func is a method, to avoid circular references
-        # in cases where func is a method an object that also has a reference to
-        # the server (e.g. when deriving from the Server class)
-        if _inspect.ismethod(func):
-            func = _weakref_method(func)
-
-        cb = struct(func=func, user_data=user_data)
+        cb = struct(func=_weakref_method(func), user_data=user_data)
         self._keep_refs.append(cb)
-        lo_server_add_method(self._server, p, t, _callback, <void*>cb)
+        lo_server_add_method(self._server, p, t, _msg_callback, <void*>cb)
 
     def del_method(self, path, typespec):
         """
@@ -469,6 +485,31 @@ cdef class _ServerBase:
 
         self._check()
         lo_server_del_method(self._server, p, t)
+
+    def add_bundle_handlers(self, start_handler, end_handler, user_data=None):
+        """
+        add_bundle_handlers(start_handler, end_handler, user_data=None)
+
+        Add bundle notification handlers.
+
+        :param start_handler:
+            a callback which fires when at the start of a bundle. This is
+            called with the bundle's timestamp and user_data.
+        :param end_handler:
+            a callback which fires when at the end of a bundle. This is called
+            with user_data.
+        :param user_data:
+            data to pass to the handlers.
+
+        .. versionadded:: 0.9.3
+        """
+        cb_data = struct(
+            start_func=_weakref_method(start_handler),
+            end_func=_weakref_method(end_handler), user_data=user_data)
+        self._keep_refs.append(cb_data)
+        return lo_server_add_bundle_handlers(
+            self._server, _bundle_start_callback, _bundle_end_callback,
+            <void*>cb_data)
 
     def send(self, target, *args):
         """
