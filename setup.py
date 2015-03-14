@@ -12,13 +12,7 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
-
-if '--with-cython' in sys.argv:
-    from Cython.Distutils import build_ext
-    sys.argv.remove('--with-cython')
-    use_cython = True
-else:
-    use_cython = False
+from Cython.Distutils import build_ext
 
 
 class build_scripts_rename(build_scripts):
@@ -34,24 +28,22 @@ class build_scripts_rename(build_scripts):
 
 
 cmdclass = {
-    'build_scripts': build_scripts_rename
+    'build_scripts': build_scripts_rename,
+    'build_ext': build_ext,
 }
 
 ext_modules = [
     Extension(
         'liblo',
-        [use_cython and 'src/liblo.pyx' or 'src/liblo.c'],
+        ['src/liblo.pyx'],
         extra_compile_args = [
             '-fno-strict-aliasing',
             '-Werror-implicit-function-declaration',
             '-Wfatal-errors',
         ],
-        libraries = ['lo']
+        libraries = ['lo'],
     )
 ]
-
-if use_cython:
-    cmdclass['build_ext'] = build_ext
 
 
 setup(
