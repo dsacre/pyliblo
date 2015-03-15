@@ -17,9 +17,7 @@ cdef extern from 'Python.h':
     void PyEval_InitThreads()
 
 from libc.stdlib cimport malloc, free
-cdef extern from 'math.h':
-    double modf(double x, double *iptr)
-
+from libc.math cimport modf
 from libc.stdint cimport int32_t, int64_t
 
 from liblo cimport *
