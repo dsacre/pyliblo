@@ -9,8 +9,10 @@ from distutils import util, log
 
 try:
     from setuptools import setup, Extension
+    args = {'test_suite': 'test'}
 except ImportError:
     from distutils.core import setup, Extension
+    args = {}
 
 from Cython.Distutils import build_ext
 
@@ -67,4 +69,5 @@ setup(
     cmdclass = cmdclass,
     ext_modules = ext_modules,
     zip_safe = False,
+    **args
 )
