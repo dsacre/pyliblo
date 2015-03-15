@@ -10,7 +10,7 @@ Requirements:
 
 * Python >= 2.6 (also works with 3.x) [http://www.python.org/]
 * Cython [http://www.cython.org/]
-* liblo [http://liblo.sourceforge.net/]
+* liblo >= 0.27 [http://liblo.sourceforge.net/]
 
 
 Installation:

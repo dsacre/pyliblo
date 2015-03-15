@@ -504,7 +504,7 @@ cdef class _ServerBase:
         :param user_data:
             data to pass to the handlers.
 
-        .. versionadded:: 0.9.3
+        .. versionadded:: 0.10.0
         """
         cb_data = struct(start_func=_weakref_method(start_handler),
                          end_func=_weakref_method(end_handler),
