@@ -37,6 +37,7 @@ OSC Server Classes
     .. automethod:: add_method
     .. automethod:: del_method
     .. automethod:: register_methods
+    .. automethod:: add_bundle_handlers
     .. autoattribute:: url
     .. autoattribute:: port
     .. autoattribute:: protocol
