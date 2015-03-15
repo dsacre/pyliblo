@@ -232,6 +232,30 @@ By default this is the server object itself.</td>
 constructor, unless its <em>reg_methods</em> parameter was set to <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="liblo.Server.add_bundle_handlers">
+<tt class="descname">add_bundle_handlers</tt><big>(</big><em>start_handler</em>, <em>end_handler</em>, <em>user_data=None</em><big>)</big><a class="headerlink" href="#liblo.Server.add_bundle_handlers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add bundle notification handlers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>start_handler</strong> &#8211; a callback which fires when at the start of a bundle. This is
+called with the bundle&#8217;s timestamp and user_data.</li>
+<li><strong>end_handler</strong> &#8211; a callback which fires when at the end of a bundle. This is called
+with user_data.</li>
+<li><strong>user_data</strong> &#8211; data to pass to the handlers.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.10.0.</span></p>
+</div>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="liblo.Server.url">
 <tt class="descname">url</tt><a class="headerlink" href="#liblo.Server.url" title="Permalink to this definition">¶</a></dt>
