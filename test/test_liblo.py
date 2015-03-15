@@ -3,7 +3,7 @@
 #
 # pyliblo - Python bindings for the liblo OSC library
 #
-# Copyright (C) 2007-2011  Dominic Sacré  <dominic.sacre@gmx.de>
+# Copyright (C) 2007-2015  Dominic Sacré  <dominic.sacre@gmx.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,10 +54,10 @@ class ServerTestCase(ServerTestCaseBase):
         del self.server
 
     def testPort(self):
-        self.assertEqual(self.server.get_port(), 1234)
+        self.assertEqual(self.server.port, 1234)
 
     def testURL(self):
-        self.assertTrue(matchHost(self.server.get_url(), 'osc\.udp://.*:1234/'))
+        self.assertTrue(matchHost(self.server.url, 'osc\.udp://.*:1234/'))
 
     def testSendInt(self):
         self.server.add_method('/foo', 'i', self.callback, "data")
@@ -67,7 +67,7 @@ class ServerTestCase(ServerTestCaseBase):
         self.assertEqual(self.cb.args[0], 123)
         self.assertEqual(self.cb.types, 'i')
         self.assertEqual(self.cb.data, "data")
-        self.assertTrue(matchHost(self.cb.src.get_url(), 'osc\.udp://.*:1234/'))
+        self.assertTrue(matchHost(self.cb.src.url, 'osc\.udp://.*:1234/'))
 
     def testSendBlob(self):
         self.server.add_method('/blob', 'b', self.callback)
@@ -197,8 +197,8 @@ class ServerCreationTestCase(unittest.TestCase):
 
     def testRandomPort(self):
         s = liblo.Server()
-        self.assertGreaterEqual(s.get_port(), 1024)
-        self.assertLessEqual(s.get_port(), 65535)
+        self.assertGreaterEqual(s.port, 1024)
+        self.assertLessEqual(s.port, 65535)
 
     def testPort(self):
         s = liblo.Server(1234)

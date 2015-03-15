@@ -19,7 +19,7 @@ def foo_baz_callback(path, args, types, src, data):
     print("blob contains %d bytes, user data was '%s'" % (len(args[0]), data))
 
 def fallback(path, args, types, src):
-    print("got unknown message '%s' from '%s'" % (path, src.get_url()))
+    print("got unknown message '%s' from '%s'" % (path, src.url))
     for a, t in zip(args, types):
         print("argument of type '%s': %s" % (t, a))
 

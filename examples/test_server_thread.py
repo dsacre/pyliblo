@@ -5,7 +5,7 @@ import liblo
 import time
 
 st = liblo.ServerThread()
-print("Created Server Thread on Port", st.get_port())
+print("Created Server Thread on Port", st.port)
 
 def foo_cb(path, args, types):
     print("foo_cb():")
@@ -14,7 +14,7 @@ def foo_cb(path, args, types):
 
 def bar_cb(path, args, types, src):
     print("bar_cb():")
-    print("message from", src.get_url())
+    print("message from", src.url)
     print("typespec:", types)
     for a, t in zip(args, types):
         print("received argument %s of type %s" % (a, t))
@@ -35,14 +35,14 @@ st.add_method('/baz', 'b', b.baz_cb, 456)
 
 st.start()
 
-liblo.send(st.get_port(), "/foo", 123, 456.789, "buh!")
+liblo.send(st.port, "/foo", 123, 456.789, "buh!")
 l = 1234567890123456
-liblo.send(st.get_port(), "/bar", l, 666, ('c', "x"))
+liblo.send(st.port, "/bar", l, 666, ('c', "x"))
 
 time.sleep(1)
 st.stop()
 st.start()
 
-liblo.send(st.get_port(), "/baz", [1,2,3,4,5,6,7,8,9,10])
+liblo.send(st.port, "/baz", [1,2,3,4,5,6,7,8,9,10])
 
 time.sleep(1)
