@@ -36,7 +36,10 @@ def make_message_manual(path, types, *args):
     msg = liblo.Message(path)
     try:
         for a, t in zip(args, types):
-            msg.add((t, a))
+            if t == 'c' and len(a) == 0: #workaround for sending null character
+                msg.add((t,"\0"))
+            else:
+                msg.add((t, a))
     except Exception as e:
         sys.exit(str(e))
 
