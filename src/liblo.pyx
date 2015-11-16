@@ -23,6 +23,7 @@ from libc.stdint cimport int32_t, int64_t
 from liblo cimport *
 
 import inspect as _inspect
+import functools as _functools
 import weakref as _weakref
 
 
@@ -257,15 +258,29 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
                  src,
                  cb.user_data)
 
-    # call function
-    if _inspect.getargspec(func)[1] == None:
-        # determine number of arguments to call the function with
-        n = len(_inspect.getargspec(func)[0])
-        if _inspect.ismethod(func):
-            n -= 1  # self doesn't count
-        r = cb.func(*func_args[0:n])
+    # determine the number of arguments to call the function with
+    if isinstance(func, _functools.partial):
+        # before Python 3.4, getargspec() did't work for functools.partial,
+        # so it needs to be handled separately
+        argspec = _inspect.getargspec(func.func)
+        nargs = len(argspec[0]) - len(func.args)
+        if func.keywords is not None:
+            nargs -= len(func.keywords)
     else:
-        # function has argument list, pass all arguments
+        if (hasattr(func, '__call__') and
+                not (_inspect.ismethod(func) or _inspect.isfunction(func))):
+            func = func.__call__
+
+        argspec = _inspect.getargspec(func)
+        nargs = len(argspec[0])
+
+        if _inspect.ismethod(func):
+            nargs -= 1  # self doesn't count
+
+    if argspec[1] == None:
+        r = cb.func(*func_args[0:nargs])
+    else:
+        # function has variable argument list, pass all arguments
         r = cb.func(*func_args)
 
     return r if r != None else 0
