@@ -250,7 +250,6 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
     free(url)
 
     cb = <object>cb_data
-    func = cb.func.func
 
     func_args = (_decode(<char*>path),
                  args,
@@ -258,11 +257,8 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
                  src,
                  cb.user_data)
 
-    # determine the number of arguments to call the function with
-    nargs = _callback_num_args(func)
-
     # call the function
-    r = cb.func(*func_args[:nargs])
+    r = cb.func(*func_args[:cb.nargs])
 
     return r if r != None else 0
 
@@ -469,11 +465,16 @@ cdef class _ServerBase:
 
         self._check()
 
+        # determine the number of arguments to call the function with
+        nargs = _callback_num_args(func)
+
         # use a weak reference if func is a method, to avoid circular
         # references in cases where func is a method of an object that also
         # has a reference to the server (e.g. when deriving from the Server
         # class)
-        cb = struct(func=_weakref_method(func), user_data=user_data)
+        cb = struct(func=_weakref_method(func),
+                    user_data=user_data,
+                    nargs=nargs)
         # keep a reference to the callback data around
         self._keep_refs.append(cb)
 
