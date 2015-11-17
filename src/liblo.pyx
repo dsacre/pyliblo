@@ -259,6 +259,18 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
                  cb.user_data)
 
     # determine the number of arguments to call the function with
+    nargs = _callback_num_args(func)
+
+    # call the function
+    r = cb.func(*func_args[:nargs])
+
+    return r if r != None else 0
+
+
+cdef int _callback_num_args(func):
+    """
+    Return the number of arguments that should be passed to callback *func*.
+    """
     if isinstance(func, _functools.partial):
         # before Python 3.4, getargspec() did't work for functools.partial,
         # so it needs to be handled separately
@@ -277,13 +289,9 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
         if _inspect.ismethod(func):
             nargs -= 1  # self doesn't count
 
-    if argspec[1] == None:
-        r = cb.func(*func_args[0:nargs])
-    else:
-        # function has variable argument list, pass all arguments
-        r = cb.func(*func_args)
-
-    return r if r != None else 0
+    # use all 5 arguments (path, args, types, src, user_data) if the
+    # function has a variable argument list
+    return nargs if argspec[1] is None else 5
 
 
 cdef int _bundle_start_callback(lo_timetag t, void *cb_data) with gil:
