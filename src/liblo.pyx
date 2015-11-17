@@ -267,11 +267,14 @@ cdef int _callback_num_args(func):
     """
     Return the number of arguments that should be passed to callback *func*.
     """
+    getargspec = (_inspect.getargspec if PY_VERSION_HEX < 0x03000000
+             else _inspect.getfullargspec)
+
     if isinstance(func, _functools.partial):
         # before Python 3.4, getargspec() did't work for functools.partial,
         # so it needs to be handled separately
-        argspec = _inspect.getargspec(func.func)
-        nargs = len(argspec[0]) - len(func.args)
+        argspec = getargspec(func.func)
+        nargs = len(argspec.args) - len(func.args)
         if func.keywords is not None:
             nargs -= len(func.keywords)
     else:
@@ -279,15 +282,15 @@ cdef int _callback_num_args(func):
                 not (_inspect.ismethod(func) or _inspect.isfunction(func))):
             func = func.__call__
 
-        argspec = _inspect.getargspec(func)
-        nargs = len(argspec[0])
+        argspec = getargspec(func)
+        nargs = len(argspec.args)
 
         if _inspect.ismethod(func):
             nargs -= 1  # self doesn't count
 
     # use all 5 arguments (path, args, types, src, user_data) if the
     # function has a variable argument list
-    return nargs if argspec[1] is None else 5
+    return nargs if argspec.varargs is None else 5
 
 
 cdef int _bundle_start_callback(lo_timetag t, void *cb_data) with gil:
