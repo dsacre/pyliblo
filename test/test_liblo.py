@@ -24,7 +24,7 @@ def matchHost(host, regex):
 
 
 class Arguments:
-    def __init__(self, path, args, types, src, data):
+    def __init__(self, path, args, types=None, src=None, data=None):
         self.path = path
         self.args = args
         self.types = types
@@ -177,6 +177,19 @@ class ServerTestCase(ServerTestCaseBase):
         self.server.free()
         with self.assertRaises(RuntimeError):
             self.server.recv()
+
+    def testCallbackVarargs(self):
+        def foo(path, args, *varargs):
+            self.cb = Arguments(path, args)
+            self.cb_varargs = varargs
+        self.server.add_method('/foo', 'f', foo, user_data='spam')
+        self.server.send(1234, '/foo', 123.456)
+        self.assertTrue(self.server.recv())
+        self.assertEqual(self.cb.path, '/foo')
+        self.assertAlmostEqual(self.cb.args[0], 123.456, places=3)
+        self.assertEqual(self.cb_varargs[0], 'f')
+        self.assertIsInstance(self.cb_varargs[1], liblo.Address)
+        self.assertEqual(self.cb_varargs[2], 'spam')
 
     def testBundleCallbacksFire(self):
         def bundle_start_cb(timestamp, user_data):
