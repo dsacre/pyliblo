@@ -258,7 +258,7 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
                  cb.user_data)
 
     # call function
-    if _inspect.getargspec(func)[1] == None:
+    if _inspect.getargspec(func)[1] is None:
         # determine number of arguments to call the function with
         n = len(_inspect.getargspec(func)[0])
         if _inspect.ismethod(func):
@@ -268,19 +268,19 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
         # function has argument list, pass all arguments
         r = cb.func(*func_args)
 
-    return r if r != None else 0
+    return r if r is not None else 0
 
 
 cdef int _bundle_start_callback(lo_timetag t, void *cb_data) with gil:
     cb = <object>cb_data
     r = cb.start_func(_timetag_to_double(t), cb.user_data)
-    return r if r != None else 0
+    return r if r is not None else 0
 
 
 cdef int _bundle_end_callback(void *cb_data) with gil:
     cb = <object>cb_data
     r = cb.end_func(cb.user_data)
-    return r if r != None else 0
+    return r if r is not None else 0
 
 
 cdef void _err_handler(int num, const_char *msg, const_char *where) with gil:
@@ -365,7 +365,7 @@ cdef class _ServerBase:
         This function is usually called automatically by the server's
         constructor, unless its *reg_methods* parameter was set to ``False``.
         """
-        if obj == None:
+        if obj is None:
             obj = self
         # find and register methods that were defined using decorators
         methods = []
@@ -431,7 +431,7 @@ cdef class _ServerBase:
         if isinstance(path, (bytes, unicode)):
             s = _encode(path)
             p = s
-        elif path == None:
+        elif path is None:
             p = NULL
         else:
             raise TypeError("path must be a string or None")
@@ -439,7 +439,7 @@ cdef class _ServerBase:
         if isinstance(typespec, (bytes, unicode)):
             s2 = _encode(typespec)
             t = s2
-        elif typespec == None:
+        elif typespec is None:
             t = NULL
         else:
             raise TypeError("typespec must be a string or None")
@@ -471,7 +471,7 @@ cdef class _ServerBase:
         if isinstance(path, (bytes, unicode)):
             s = _encode(path)
             p = s
-        elif path == None:
+        elif path is None:
             p = NULL
         else:
             raise TypeError("path must be a string or None")
@@ -479,7 +479,7 @@ cdef class _ServerBase:
         if isinstance(typespec, (bytes, unicode)):
             s2 = _encode(typespec)
             t = s2
-        elif typespec == None:
+        elif typespec is None:
             t = NULL
         else:
             raise TypeError("typespec must be a string or None")
@@ -589,7 +589,7 @@ cdef class Server(_ServerBase):
         """
         cdef char *cs
 
-        if port != None:
+        if port is not None:
             p = _encode(str(port));
             cs = p
         else:
@@ -633,7 +633,7 @@ cdef class Server(_ServerBase):
         """
         cdef int t, r
         self._check()
-        if timeout != None:
+        if timeout is not None:
             t = timeout
             with nogil:
                 r = lo_server_recv_noblock(self._server, t)
@@ -685,7 +685,7 @@ cdef class ServerThread(_ServerBase):
         """
         cdef char *cs
 
-        if port != None:
+        if port is not None:
             p = _encode(str(port));
             cs = p
         else:
@@ -981,7 +981,7 @@ cdef class Message:
         elif isinstance(value, (bytes, unicode)):
             s = _encode(value)
             lo_message_add_string(self._message, s)
-        elif value == None:
+        elif value is None:
             lo_message_add_nil(self._message)
         elif value == float('inf'):
             lo_message_add_infinitum(self._message)
