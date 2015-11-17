@@ -15,6 +15,7 @@ import unittest
 import re
 import time
 import sys
+import functools
 import liblo
 
 
@@ -24,7 +25,7 @@ def matchHost(host, regex):
 
 
 class Arguments:
-    def __init__(self, path, args, types, src, data):
+    def __init__(self, path, args, types=None, src=None, data=None):
         self.path = path
         self.args = args
         self.types = types
@@ -177,6 +178,50 @@ class ServerTestCase(ServerTestCaseBase):
         self.server.free()
         with self.assertRaises(RuntimeError):
             self.server.recv()
+
+    def testCallbackVarargs(self):
+        def foo(path, args, *varargs):
+            self.cb = Arguments(path, args)
+            self.cb_varargs = varargs
+        self.server.add_method('/foo', 'f', foo, user_data='spam')
+        self.server.send(1234, '/foo', 123.456)
+        self.assertTrue(self.server.recv())
+        self.assertEqual(self.cb.path, '/foo')
+        self.assertAlmostEqual(self.cb.args[0], 123.456, places=3)
+        self.assertEqual(self.cb_varargs[0], 'f')
+        self.assertIsInstance(self.cb_varargs[1], liblo.Address)
+        self.assertEqual(self.cb_varargs[2], 'spam')
+
+    def testCallbackCallable(self):
+        class Foo:
+            def __init__(self):
+                self.a = None
+            def __call__(self, path, args):
+                self.a = args[0]
+        foo = Foo()
+        self.server.add_method('/foo', 'i', foo)
+        self.server.send(1234, '/foo', 23)
+        self.assertTrue(self.server.recv())
+        self.assertEqual(foo.a, 23)
+
+    def testCallbackPartial(self):
+        def foo(partarg, path, args, types, src, data):
+            self.cb = Arguments(path, args, types, src, data)
+            self.cb_partarg = partarg
+        self.server.add_method('/foo', 'i', functools.partial(foo, 'blubb'))
+        self.server.send(1234, '/foo', 23)
+        self.assertTrue(self.server.recv())
+        self.assertEqual(self.cb_partarg, 'blubb')
+        self.assertEqual(self.cb.path, '/foo')
+        self.assertEqual(self.cb.args[0], 23)
+
+        self.server.add_method('/foo2', 'i', functools.partial(foo, 'bla', data='blubb'))
+        self.server.send(1234, '/foo2', 42)
+        self.assertTrue(self.server.recv())
+        self.assertEqual(self.cb_partarg, 'bla')
+        self.assertEqual(self.cb.path, '/foo2')
+        self.assertEqual(self.cb.args[0], 42)
+        self.assertEqual(self.cb.data, 'blubb')
 
     def testBundleCallbacksFire(self):
         def bundle_start_cb(timestamp, user_data):

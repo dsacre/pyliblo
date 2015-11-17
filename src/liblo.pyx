@@ -23,6 +23,7 @@ from libc.stdint cimport int32_t, int64_t
 from liblo cimport *
 
 import inspect as _inspect
+import functools as _functools
 import weakref as _weakref
 
 
@@ -249,7 +250,6 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
     free(url)
 
     cb = <object>cb_data
-    func = cb.func.func
 
     func_args = (_decode(<char*>path),
                  args,
@@ -257,18 +257,40 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
                  src,
                  cb.user_data)
 
-    # call function
-    if _inspect.getargspec(func)[1] is None:
-        # determine number of arguments to call the function with
-        n = len(_inspect.getargspec(func)[0])
-        if _inspect.ismethod(func):
-            n -= 1  # self doesn't count
-        r = cb.func(*func_args[0:n])
-    else:
-        # function has argument list, pass all arguments
-        r = cb.func(*func_args)
+    # call the function
+    r = cb.func(*func_args[:cb.nargs])
 
     return r if r is not None else 0
+
+
+cdef int _callback_num_args(func):
+    """
+    Return the number of arguments that should be passed to callback *func*.
+    """
+    getargspec = (_inspect.getargspec if PY_VERSION_HEX < 0x03000000
+             else _inspect.getfullargspec)
+
+    if isinstance(func, _functools.partial):
+        # before Python 3.4, getargspec() did't work for functools.partial,
+        # so it needs to be handled separately
+        argspec = getargspec(func.func)
+        nargs = len(argspec.args) - len(func.args)
+        if func.keywords is not None:
+            nargs -= len(func.keywords)
+    else:
+        if (hasattr(func, '__call__') and
+                not (_inspect.ismethod(func) or _inspect.isfunction(func))):
+            func = func.__call__
+
+        argspec = getargspec(func)
+        nargs = len(argspec.args)
+
+        if _inspect.ismethod(func):
+            nargs -= 1  # self doesn't count
+
+    # use all 5 arguments (path, args, types, src, user_data) if the
+    # function has a variable argument list
+    return nargs if argspec.varargs is None else 5
 
 
 cdef int _bundle_start_callback(lo_timetag t, void *cb_data) with gil:
@@ -446,11 +468,16 @@ cdef class _ServerBase:
 
         self._check()
 
+        # determine the number of arguments to call the function with
+        nargs = _callback_num_args(func)
+
         # use a weak reference if func is a method, to avoid circular
         # references in cases where func is a method of an object that also
         # has a reference to the server (e.g. when deriving from the Server
         # class)
-        cb = struct(func=_weakref_method(func), user_data=user_data)
+        cb = struct(func=_weakref_method(func),
+                    user_data=user_data,
+                    nargs=nargs)
         # keep a reference to the callback data around
         self._keep_refs.append(cb)
 
