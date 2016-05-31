@@ -1020,6 +1020,11 @@ cdef class Message:
                 raise TypeError("unsupported message argument type")
             self._add('b', value)
 
+    def serialise(self):
+        cdef size_t length = 0
+        cdef char* buf = <char*> lo_message_serialise(self._message, self._path, NULL, &length)
+        return buf[:length]
+
 
 ################################################################################
 #  Bundle
