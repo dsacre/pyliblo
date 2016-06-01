@@ -1023,7 +1023,10 @@ cdef class Message:
     def serialise(self):
         cdef size_t length = 0
         cdef char* buf = <char*> lo_message_serialise(self._message, self._path, NULL, &length)
-        return buf[:length]
+        try:
+            return buf[:length]
+        finally:
+            free(buf)
 
 
 ################################################################################
