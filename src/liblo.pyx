@@ -206,8 +206,7 @@ class ServerError(Exception):
         return s
 
 
-cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
-                       int argc, lo_message msg, void *cb_data) with gil:
+cdef list _extract_args(const_char *types, lo_arg **argv):
     cdef int i
     cdef char t
     cdef unsigned char *ptr
@@ -215,7 +214,7 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
 
     args = []
 
-    for i from 0 <= i < argc:
+    for i from 0 <= i < len(types):
         t = types[i]
         if   t == 'i': v = argv[i].i
         elif t == 'h': v = argv[i].h
@@ -242,8 +241,12 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
                     v.append(ptr[j])
         else:
             v = None  # unhandled data type
-
         args.append(v)
+    return args
+
+cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
+                       int argc, lo_message msg, void *cb_data) with gil:
+    args = _extract_args(types, argv)
 
     cdef char *url = lo_address_get_url(lo_message_get_source(msg))
     src = Address(url)
@@ -1040,11 +1043,27 @@ cdef class Message:
 
     def serialise(self):
         cdef size_t length = 0
-        cdef char* buf = <char*> lo_message_serialise(self._message, self._path, NULL, &length)
+        cdef char* buf = <char*> lo_message_serialise(
+            self._message, self._path, NULL, &length)
         try:
             return buf[:length]
         finally:
             free(buf)
+
+    @property
+    def path(self):
+        return _decode(self._path)
+
+    @property
+    def types(self):
+        cdef char* buf = lo_message_get_types(self._message)
+        return _decode(buf)
+
+    @property
+    def args(self):
+        return _extract_args(
+            lo_message_get_types(self._message),
+            lo_message_get_argv(self._message))
 
 
 ################################################################################
