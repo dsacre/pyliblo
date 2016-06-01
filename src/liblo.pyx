@@ -905,6 +905,9 @@ cdef class _Blob:
         lo_blob_free(self._blob)
 
 
+_deserialising = object()
+
+
 cdef class Message:
     """
     An OSC message, consisting of a path and arbitrary arguments.
@@ -920,11 +923,26 @@ cdef class Message:
         Create a new :class:`!Message` object.
         """
         self._keep_refs = []
-        # encode path to bytestring if necessary
-        self._path = _encode(path)
-        self._message = lo_message_new()
+        if path is _deserialising:
+            buf, = args
+            self._init_from_buffer(buf)
+        else:
+            # encode path to bytestring if necessary
+            self._path = _encode(path)
+            self._message = lo_message_new()
+            self.add(*args)
 
-        self.add(*args)
+    cdef _init_from_buffer(self, buf):
+        cdef int result;
+        cdef char* cbuf = buf;
+        self._message = lo_message_deserialise(cbuf, len(buf), &result)
+        if self._message == NULL:
+            raise ValueError('Deserialisation failed (code {})'.format(result))
+        self._path = lo_get_path(cbuf, len(buf))
+
+    @classmethod
+    def deserialise(cls, buf):
+        return cls(_deserialising, buf)
 
     def __dealloc__(self):
         lo_message_free(self._message)
