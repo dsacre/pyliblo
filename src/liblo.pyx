@@ -121,11 +121,11 @@ def time():
 
 cdef _send(target, _ServerBase src, args):
     cdef lo_server from_server
-    cdef Address target_address
+    cdef _Address target_address
     cdef int r
 
     # convert target to Address object, if necessary
-    if isinstance(target, Address):
+    if isinstance(target, _Address):
         target_address = target
     elif isinstance(target, tuple):
         # unpack tuple
@@ -245,9 +245,8 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
 
         args.append(v)
 
-    cdef char *url = lo_address_get_url(lo_message_get_source(msg))
-    src = Address(url)
-    free(url)
+    src = _Address()
+    src._address = lo_message_get_source(msg)
 
     cb = <object>cb_data
 
@@ -773,55 +772,11 @@ class AddressError(Exception):
         return "address error: %s" % self.msg
 
 
-cdef class Address:
+cdef class _Address:
+    '''An access wrapper around lo_address.
+
+    DO NOT INSTANTIATE DIRECTLY IN PYTHON!!!'''
     cdef lo_address _address
-
-    def __init__(self, addr, addr2=None, proto=LO_UDP):
-        """
-        Address(hostname, port[, proto])
-        Address(port)
-        Address(url)
-
-        Create a new :class:`!Address` object from the given hostname/port
-        or URL.
-
-        :param hostname:
-            the target's hostname.
-
-        :param port:
-            the port number on the target.
-
-        :param proto:
-            one of the constants :const:`UDP`, :const:`TCP`, or :const:`UNIX`.
-
-        :param url:
-            a URL in liblo notation, e.g. ``'osc.udp://hostname:1234/'``.
-
-        :raises AddressError:
-            if the given parameters do not represent a valid address.
-
-        """
-        if addr2:
-            # Address(host, port[, proto])
-            s = _encode(addr)
-            s2 = _encode(str(addr2))
-            self._address = lo_address_new_with_proto(proto, s, s2)
-            if not self._address:
-                raise AddressError("invalid protocol")
-        elif isinstance(addr, int) or (isinstance(addr, str) and addr.isdigit()):
-            # Address(port)
-            s = str(addr).encode()
-            self._address = lo_address_new(NULL, s)
-        else:
-            # Address(url)
-            s = _encode(addr)
-            self._address = lo_address_new_from_url(s)
-            # lo_address_errno() is of no use if self._addr == NULL
-            if not self._address:
-                raise AddressError("invalid URL '%s'" % str(addr))
-
-    def __dealloc__(self):
-        lo_address_free(self._address)
 
     def get_url(self):
         cdef char *tmp = lo_address_get_url(self._address)
@@ -870,6 +825,55 @@ cdef class Address:
         """
         def __get__(self):
             return self.get_protocol()
+
+
+cdef class Address(_Address):
+    def __init__(self, addr, addr2=None, proto=LO_UDP):
+        """
+        Address(hostname, port[, proto])
+        Address(port)
+        Address(url)
+
+        Create a new :class:`!Address` object from the given hostname/port
+        or URL.
+
+        :param hostname:
+            the target's hostname.
+
+        :param port:
+            the port number on the target.
+
+        :param proto:
+            one of the constants :const:`UDP`, :const:`TCP`, or :const:`UNIX`.
+
+        :param url:
+            a URL in liblo notation, e.g. ``'osc.udp://hostname:1234/'``.
+
+        :raises AddressError:
+            if the given parameters do not represent a valid address.
+
+        """
+        if addr2:
+            # Address(host, port[, proto])
+            s = _encode(addr)
+            s2 = _encode(str(addr2))
+            self._address = lo_address_new_with_proto(proto, s, s2)
+            if not self._address:
+                raise AddressError("invalid protocol")
+        elif isinstance(addr, int) or (isinstance(addr, str) and addr.isdigit()):
+            # Address(port)
+            s = str(addr).encode()
+            self._address = lo_address_new(NULL, s)
+        else:
+            # Address(url)
+            s = _encode(addr)
+            self._address = lo_address_new_from_url(s)
+            # lo_address_errno() is of no use if self._addr == NULL
+            if not self._address:
+                raise AddressError("invalid URL '%s'" % str(addr))
+
+    def __dealloc__(self):
+        lo_address_free(self._address)
 
 
 ################################################################################
