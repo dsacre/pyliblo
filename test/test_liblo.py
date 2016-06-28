@@ -359,26 +359,22 @@ class MessageTestCase(unittest.TestCase):
         ('b', b'mrblobby'),
     )
 
-    def assertListsAlmostEqual(self, a, b):
-        self.assertEqual(len(a), len(b))
-        for ai, bi in zip(a, b):
-            if isinstance(ai, float):
-                self.assertAlmostEqual(ai, bi, delta=0.000001)
-            else:
-                self.assertEqual(ai, bi)
-
     def testPath(self):
         m = liblo.Message('/some/path/')
         self.assertEqual(m.path, '/some/path/')
 
-    def testTypes(self):
+    def testArgsAndTypes(self):
         m = liblo.Message('/', *self.example_data)
-        self.assertEqual(m.types, ''.join(a[0] for a in self.example_data))
-
-    def testArgs(self):
-        m = liblo.Message('/', *self.example_data)
-        self.assertListsAlmostEqual(
-            m.args, list(a[1] for a in self.example_data))
+        self.assertEqual(len(m.types), len(self.example_data))
+        for at, aa, (et, ea) in zip(m.types, m.args, self.example_data):
+            self.assertEqual(at, et)
+            if isinstance(aa, float):
+                self.assertAlmostEqual(aa, ea, delta=0.000001)
+            elif at == 'b' and isinstance(aa, list):
+                # Python 2 compataibility for byte handling
+                self.assertEqual(''.join(map(chr, aa)), ea)
+            else:
+                self.assertEqual(aa, ea)
 
     def testSerialisation(self):
         m1 = liblo.Message('/', *self.example_data)
