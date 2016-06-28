@@ -101,6 +101,12 @@ cdef extern from 'lo/lo.h':
     void lo_message_add_timetag(lo_message m, lo_timetag a)
     void lo_message_add_blob(lo_message m, lo_blob a)
     lo_address lo_message_get_source(lo_message m)
+    void* lo_message_serialise(
+        lo_message m, const char* path, void* to, size_t* size)
+    lo_message lo_message_deserialise(void* data, size_t size, int* result)
+    char* lo_get_path(void* data, size_t size)
+    char* lo_message_get_types(lo_message m)
+    lo_arg** lo_message_get_argv(lo_message m)
 
     # blob
     lo_blob lo_blob_new(int32_t size, void *data)

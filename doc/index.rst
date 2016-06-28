@@ -75,6 +75,11 @@ Utility Classes
 .. autoclass:: Message
 
     .. automethod:: __init__
+    .. automethod:: deserialise
+    .. automethod:: serialise
+    .. autoattribute:: path
+    .. autoattribute:: args
+    .. autoattribute:: types
 
 .. autoclass:: Bundle
 

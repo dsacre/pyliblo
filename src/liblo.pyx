@@ -206,8 +206,7 @@ class ServerError(Exception):
         return s
 
 
-cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
-                       int argc, lo_message msg, void *cb_data) with gil:
+cdef list _extract_args(const_char *types, lo_arg **argv):
     cdef int i
     cdef char t
     cdef unsigned char *ptr
@@ -215,7 +214,7 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
 
     args = []
 
-    for i from 0 <= i < argc:
+    for i from 0 <= i < len(types):
         t = types[i]
         if   t == 'i': v = argv[i].i
         elif t == 'h': v = argv[i].h
@@ -242,8 +241,12 @@ cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
                     v.append(ptr[j])
         else:
             v = None  # unhandled data type
-
         args.append(v)
+    return args
+
+cdef int _msg_callback(const_char *path, const_char *types, lo_arg **argv,
+                       int argc, lo_message msg, void *cb_data) with gil:
+    args = _extract_args(types, argv)
 
     cdef char *url = lo_address_get_url(lo_message_get_source(msg))
     src = Address(url)
@@ -905,6 +908,9 @@ cdef class _Blob:
         lo_blob_free(self._blob)
 
 
+_deserialising = object()
+
+
 cdef class Message:
     """
     An OSC message, consisting of a path and arbitrary arguments.
@@ -920,11 +926,32 @@ cdef class Message:
         Create a new :class:`!Message` object.
         """
         self._keep_refs = []
-        # encode path to bytestring if necessary
-        self._path = _encode(path)
-        self._message = lo_message_new()
+        if path is _deserialising:
+            buf, = args
+            self._init_from_buffer(buf)
+        else:
+            # encode path to bytestring if necessary
+            self._path = _encode(path)
+            self._message = lo_message_new()
+            self.add(*args)
 
-        self.add(*args)
+    cdef _init_from_buffer(self, buf):
+        cdef int result;
+        cdef char* cbuf = buf;
+        self._message = lo_message_deserialise(cbuf, len(buf), &result)
+        if self._message == NULL:
+            raise ValueError('Deserialisation failed (code {})'.format(result))
+        self._path = lo_get_path(cbuf, len(buf))
+
+    @classmethod
+    def deserialise(cls, buf):
+        """
+        deserialise(buf)
+
+        Create a new :class:`!Message` object from its on-the-wire byte string
+        representation.
+        """
+        return cls(_deserialising, buf)
 
     def __dealloc__(self):
         lo_message_free(self._message)
@@ -1019,6 +1046,45 @@ cdef class Message:
             except TypeError:
                 raise TypeError("unsupported message argument type")
             self._add('b', value)
+
+    def serialise(self):
+        """
+        serialise()
+
+        Serialise this :class:`!Message` object to its on-the-wire byte string
+        representation.
+        """
+        cdef size_t length = 0
+        cdef char* buf = <char*> lo_message_serialise(
+            self._message, self._path, NULL, &length)
+        try:
+            return buf[:length]
+        finally:
+            free(buf)
+
+    property path:
+        """
+        The path of this :class:`!Message`
+        """
+        def __get__(self):
+            return _decode(self._path)
+
+    property types:
+        """
+        A string of the typetags of the arguments of this :class:`!Message`
+        """
+        def __get__(self):
+            cdef char* buf = lo_message_get_types(self._message)
+            return _decode(buf)
+
+    property args:
+        """
+        A list of the argument values of this :class:`!Message`
+        """
+        def __get__(self):
+            return _extract_args(
+                lo_message_get_types(self._message),
+                lo_message_get_argv(self._message))
 
 
 ################################################################################

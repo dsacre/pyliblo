@@ -341,5 +341,49 @@ class AddressTestCase(unittest.TestCase):
         self.assertEqual(a.url, 'osc.tcp://foo:1234/')
 
 
+class MessageTestCase(unittest.TestCase):
+    example_data = (
+        ('i', 42),
+        ('h', 43),
+        ('f', 4.2),
+        ('d', 4.3),
+        ('c', 'A'),
+        ('s', 'hello'),
+        ('S', 'world'),
+        ('T', True),
+        ('F', False),
+        ('N', None),
+        ('I', float('inf')),
+        ('m', (1, 2, 4, 5)),
+        ('t', 4444.44),
+        ('b', b'mrblobby'),
+    )
+
+    def testPath(self):
+        m = liblo.Message('/some/path/')
+        self.assertEqual(m.path, '/some/path/')
+
+    def testArgsAndTypes(self):
+        m = liblo.Message('/', *self.example_data)
+        self.assertEqual(len(m.types), len(self.example_data))
+        for at, aa, (et, ea) in zip(m.types, m.args, self.example_data):
+            self.assertEqual(at, et)
+            if isinstance(aa, float):
+                self.assertAlmostEqual(aa, ea, delta=0.000001)
+            elif at == 'b' and isinstance(aa, list):
+                # Python 2 compataibility for byte handling
+                self.assertEqual(''.join(map(chr, aa)), ea)
+            else:
+                self.assertEqual(aa, ea)
+
+    def testSerialisation(self):
+        m1 = liblo.Message('/', *self.example_data)
+        b = m1.serialise()
+        self.assertIsInstance(b, bytes)
+        m2 = liblo.Message.deserialise(b)
+        self.assertEqual(m1.path, m2.path)
+        self.assertEqual(m1.args, m2.args)
+
+
 if __name__ == "__main__":
     unittest.main()
