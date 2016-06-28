@@ -1062,20 +1062,29 @@ cdef class Message:
         finally:
             free(buf)
 
-    @property
-    def path(self):
-        return _decode(self._path)
+    property path:
+        """
+        The path of this :class:`!Message`
+        """
+        def __get__(self):
+            return _decode(self._path)
 
-    @property
-    def types(self):
-        cdef char* buf = lo_message_get_types(self._message)
-        return _decode(buf)
+    property types:
+        """
+        A string of the typetags of the arguments of this :class:`!Message`
+        """
+        def __get__(self):
+            cdef char* buf = lo_message_get_types(self._message)
+            return _decode(buf)
 
-    @property
-    def args(self):
-        return _extract_args(
-            lo_message_get_types(self._message),
-            lo_message_get_argv(self._message))
+    property args:
+        """
+        A list of the argument values of this :class:`!Message`
+        """
+        def __get__(self):
+            return _extract_args(
+                lo_message_get_types(self._message),
+                lo_message_get_argv(self._message))
 
 
 ################################################################################
