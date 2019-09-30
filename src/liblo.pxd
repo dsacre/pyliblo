@@ -81,6 +81,7 @@ cdef extern from 'lo/lo.h':
     char *lo_address_get_hostname(lo_address a)
     char *lo_address_get_port(lo_address a)
     int lo_address_get_protocol(lo_address a)
+    int lo_address_set_stream_slip(lo_address a, int enable)
     const_char* lo_address_errstr(lo_address a)
 
     # message
