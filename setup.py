@@ -59,6 +59,8 @@ setup(
     url = 'http://das.nasophon.de/pyliblo/',
     description = 'Python bindings for the liblo OSC library',
     license = 'LGPL',
+    include_package_data = True,
+    packages = ['liblo'],
     scripts = [
         'scripts/send_osc.py',
         'scripts/dump_osc.py',
@@ -67,7 +69,7 @@ setup(
         ('share/man/man1', [
             'scripts/send_osc.1',
             'scripts/dump_osc.1',
-        ]),
+        ])
     ],
     cmdclass = cmdclass,
     ext_modules = ext_modules,
