@@ -10,5 +10,6 @@ include scripts/dump_osc.1
 include scripts/send_osc.1
 include test/*.py
 include examples/*.py
+include liblo/*.pyi
 graft doc
 prune doc/build
